@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'view/splash_screen.dart';
 import 'database_service.dart';
-import 'user_provider.dart';
+import 'model/provider/user_provider.dart';
 
 
 void main() async {

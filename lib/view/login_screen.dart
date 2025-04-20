@@ -5,7 +5,8 @@ import 'package:heartcare/view/resetpassword_screen.dart';
 import 'package:heartcare/view/signup_screen.dart';
 import 'package:provider/provider.dart';
 import '../controller/user_controller.dart';
-import '../user_provider.dart';
+import '../model/provider/user_provider.dart';
+import 'app_bar/main_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -153,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               // Navigate to the next screen
                               Navigator.pushReplacement(
                                 context,
-                                MaterialPageRoute(builder: (context) => const HomepageScreen()),
+                                MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
                               );
                             } else {
                               // Show login failed error
