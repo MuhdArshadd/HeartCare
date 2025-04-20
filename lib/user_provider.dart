@@ -1,0 +1,18 @@
+import 'package:flutter/material.dart';
+import 'model/user_model.dart';
+
+class UserProvider extends ChangeNotifier {
+  UserModel? _user;
+
+  UserModel? get user => _user;
+
+  void setUser(UserModel newUser) {
+    _user = newUser;
+    notifyListeners(); // Notify widgets listening to changes
+  }
+
+  void clearUser() {
+    _user = null;
+    notifyListeners();
+  }
+}
