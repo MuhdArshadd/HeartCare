@@ -145,7 +145,22 @@ class _LoginScreenState extends State<LoginScreen> {
                             String password = _passwordController.text;
 
                             UserModel? user = await userController.userLogin(username, password);
-                            print (user);
+
+                            print('DEBUG: Logged in user ->');
+                            print('Username: ${user?.username}');
+                            print('Full Name: ${user?.fullname}');
+                            print('Email: ${user?.emailAddress}');
+                            print('Password: ${user?.password}');
+                            print('Age: ${user?.age}');
+                            print('Sex: ${user?.sex}');
+                            print('Body Weight: ${user?.bodyWeight}');
+                            print('Height: ${user?.height}');
+                            print('Family History of CVD: ${user?.familyHistoryCvd}');
+                            print('Ethnicity Group: ${user?.ethnicityGroup}');
+                            print('Marital Status: ${user?.maritalStatus}');
+                            print('Employment Status: ${user?.employmentStatus}');
+                            print('Education Level: ${user?.educationLevel}');
+                            print('Profile Image: ${user?.profileImage != null ? 'Available' : 'Null'}');
 
                             if (user != null) {
                               // Save to global state

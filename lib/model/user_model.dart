@@ -56,21 +56,20 @@ class UserModel {
 
   // Convert a Map to a UserModel object
   factory UserModel.fromMap(Map<String, dynamic> map) {
-    print(map);
     return UserModel(
       username: map['username'],
       fullname: map['fullname'],
       emailAddress: map['email_address'],
       password: map['password'],
-      age: map['age'] ?? null,
-      sex: map['sex'] ?? null,
-      bodyWeight: map['body_weight'] ?? null,
-      height: map['height'] ?? null,
-      familyHistoryCvd: map['family_history_cvd'] ?? null,
-      ethnicityGroup: map['ethnicity_group'] ?? null,
-      maritalStatus: map['marital_status'] ?? null,
-      employmentStatus: map['employment_status'] ?? null,
-      educationLevel: map['education_level'] ?? null,
+      age: map['age'] ?? 0,
+      sex: map['sex'] ?? "N/A",
+      bodyWeight: map['body_weight'] ?? 0.0,
+      height: map['height'] ?? 0.0,
+      familyHistoryCvd: map['family_history_cvd'] ?? false,
+      ethnicityGroup: map['ethnicity_group'] ?? "N/A",
+      maritalStatus: map['marital_status'] ?? "N/A",
+      employmentStatus: map['employment_status'] ?? "N/A",
+      educationLevel: map['education_level'] ?? "N/A",
       profileImage: map['profile_image'] ?? null
     );
   }
