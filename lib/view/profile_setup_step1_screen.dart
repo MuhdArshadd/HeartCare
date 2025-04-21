@@ -22,7 +22,7 @@ class ProfileSetupStep1 extends StatelessWidget {
             provider.resetProfile();
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+              MaterialPageRoute(builder: (context) => const MainNavigationScreen(selectedIndex: 0,)),
             );
           },
         ),

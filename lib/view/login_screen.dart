@@ -147,6 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             UserModel? user = await userController.userLogin(username, password);
 
                             print('DEBUG: Logged in user ->');
+                            print('user ID: ${user?.userID}');
                             print('Username: ${user?.username}');
                             print('Full Name: ${user?.fullname}');
                             print('Email: ${user?.emailAddress}');
@@ -167,9 +168,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               Provider.of<UserProvider>(context, listen: false).setUser(user);
 
                               // Navigate to the next screen
-                              Navigator.pushReplacement(
+                              Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+                                MaterialPageRoute(builder: (context) => const MainNavigationScreen(selectedIndex: 0,)),
                               );
                             } else {
                               // Show login failed error

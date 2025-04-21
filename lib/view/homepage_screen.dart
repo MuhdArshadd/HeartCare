@@ -4,7 +4,9 @@ import 'package:heartcare/view/app_bar/appbar.dart';
 import 'package:heartcare/view/popup_screen/complete_profile_popup.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../model/provider/user_provider.dart'; // For DateFormat
+import '../model/provider/user_provider.dart';
+import 'app_bar/main_navigation.dart';
+import 'diagnose_cvd_screen.dart'; // For DateFormat
 
 
 class HomepageScreen extends StatefulWidget {
@@ -55,7 +57,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
             const SizedBox(height: 8),
             const Text("Home page", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            const Text("Welcome, Muhammad Arshad!", style: TextStyle(fontSize: 16)),
+            Text("Welcome @${user?.username}!", style: TextStyle(fontSize: 16)),
 
             const SizedBox(height: 16),
             _buildCard(
@@ -84,7 +86,10 @@ class _HomepageScreenState extends State<HomepageScreen> {
                       builder: (_) => const ProfileCompletionPopup(),
                     );
                   } else {
-                    // Navigate to diagnosis feature
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const DiagnosePage()),
+                    );
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -127,8 +132,8 @@ class _HomepageScreenState extends State<HomepageScreen> {
             const SizedBox(height: 16),
             const Text("Things to do:", style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            _todoTile("Log Your Symptoms", Icons.check),
-            _todoTile("Log Your Treatments", Icons.check),
+            _todoTile("Log Your Symptoms", Icons.checklist_sharp),
+            _todoTile("Log Your Treatments", Icons.checklist_sharp),
 
             const SizedBox(height: 16),
             Row(
@@ -201,7 +206,17 @@ class _HomepageScreenState extends State<HomepageScreen> {
         title: Text(title),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: () {
-          // TODO: Navigate to respective page
+          if (title == "Log Your Symptoms"){
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const MainNavigationScreen(selectedIndex: 1,)),
+            );
+          }else if (title == "Log Your Treatments"){
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const MainNavigationScreen(selectedIndex: 2,)),
+            );
+          }
         },
       ),
     );

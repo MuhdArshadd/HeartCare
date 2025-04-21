@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:heartcare/controller/user_controller.dart';
+import 'package:heartcare/view/profile_setup_complete_screen.dart';
 import 'package:provider/provider.dart';
 import '../model/provider/profile_setup_provider.dart';
+import '../model/provider/user_provider.dart';
+import '../model/user_model.dart';
 import 'app_bar/main_navigation.dart';
 
 class ProfileSetupStep3 extends StatelessWidget {
@@ -21,7 +25,7 @@ class ProfileSetupStep3 extends StatelessWidget {
             provider.resetProfile();
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+              MaterialPageRoute(builder: (context) => const MainNavigationScreen(selectedIndex: 0,)),
             );
           },
         ),
@@ -153,8 +157,10 @@ class ProfileSetupStep3 extends StatelessWidget {
             const SizedBox(height: 24),
 
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final provider = Provider.of<ProfileSetupProvider>(context, listen: false);
+                final userProvider = Provider.of<UserProvider>(context, listen: false);
+                final userController = UserController();
 
                 debugPrint("===== Profile Setup Debug =====");
                 debugPrint("Age: ${provider.age}");
@@ -173,8 +179,72 @@ class ProfileSetupStep3 extends StatelessWidget {
                 debugPrint("Hypercholesterolemia: ${provider.hypercholesterolemia}");
                 debugPrint("Smoker: ${provider.smoker}");
                 debugPrint("================================");
-              },
 
+                // Construct full UserModel with updated fields
+                final user = UserModel(
+                  userID: userProvider.user!.userID,
+                  username: userProvider.user!.username,
+                  fullname: userProvider.user!.fullname,
+                  emailAddress: userProvider.user!.emailAddress,
+                  password: userProvider.user!.password,
+                  age: provider.age,
+                  sex: provider.gender,
+                  bodyWeight: provider.weight,
+                  height: provider.height,
+                  familyHistoryCvd: provider.familyCVD,
+                  ethnicityGroup: provider.ethnicity,
+                  maritalStatus: provider.marriage,
+                  employmentStatus: provider.employment,
+                  educationLevel: provider.education,
+                  profileImage: userProvider.user!.profileImage,
+                );
+
+                // Prepare risk map
+                final Map<String, bool> riskPresenceMap = {
+                  "Diabetes Mellitus": provider.diabetes!,
+                  "Hypertension": provider.hypertensive!,
+                  "Hypercholesterolemia": provider.hypercholesterolemia!,
+                  "Smoking": provider.smoker!,
+                  "Obesity": user.bodyWeight! / (user.height! * user.height!) > 25.0,
+                  "Family history of CVD": provider.familyCVD!
+                };
+
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => const Center(child: CircularProgressIndicator()),
+                );
+
+                try {
+                  // 1. Complete profile update
+                  await userController.userCompleteProfile(user);
+
+                  //delay
+                  await Future.delayed(const Duration(seconds: 2));
+
+                  // 2. Update risk factors
+                  await userController.insertUserRiskFactors(user.userID, riskPresenceMap);
+
+                  // 3. Update provider state
+                  userProvider.setUser(user); // Reflect latest profile info
+
+                  // 4. Delay and navigate to success screen
+                  Navigator.pop(context); // remove loading dialog
+
+                  // 5. Reset setup state
+                  provider.resetProfile();
+
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ProfileCompleteScreen()),
+                  );
+                } catch (e) {
+                  Navigator.pop(context); // remove loading dialog
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Failed to complete profile: $e")),
+                  );
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.redAccent,
                 foregroundColor: Colors.white,

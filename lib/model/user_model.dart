@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 class UserModel {
+  final int userID; //Not Null but for register je will ignore
   final String username; //Not Null
   final String fullname; //Not Null
   final String emailAddress; //Not Null
@@ -18,6 +19,7 @@ class UserModel {
 
   // Constructor to initialize the attributes
   UserModel({
+    required this.userID,
     required this.username,
     required this.fullname,
     required this.emailAddress,
@@ -37,6 +39,7 @@ class UserModel {
   // Convert the UserModel to a Map for database insertion
   Map<String, dynamic> toMap() {
     return {
+      'userid': userID,
       'username': username,
       'fullname': fullname,
       'email_address': emailAddress,
@@ -57,6 +60,7 @@ class UserModel {
   // Convert a Map to a UserModel object
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
+      userID: map['user_id'],
       username: map['username'],
       fullname: map['fullname'],
       emailAddress: map['email_address'],

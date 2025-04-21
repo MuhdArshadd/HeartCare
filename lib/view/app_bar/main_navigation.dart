@@ -8,7 +8,7 @@ import 'bottomnavbar.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final int selectedIndex;
-  const MainNavigationScreen({super.key, this.selectedIndex = 0});
+  const MainNavigationScreen({super.key, required this.selectedIndex});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
