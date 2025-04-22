@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:io'; // For File type
 import 'package:file_picker/file_picker.dart';
 import 'package:heartcare/controller/user_controller.dart';
-import 'package:heartcare/view/popup_screen/signup_loading_popup.dart';
+import 'package:heartcare/view/popup_screen/loading_processing_popup.dart';
 import 'package:heartcare/model/user_model.dart';
 import 'package:heartcare/view/login_screen.dart';
 

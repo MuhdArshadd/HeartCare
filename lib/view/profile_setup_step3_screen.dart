@@ -205,7 +205,7 @@ class ProfileSetupStep3 extends StatelessWidget {
                   "Hypertension": provider.hypertensive!,
                   "Hypercholesterolemia": provider.hypercholesterolemia!,
                   "Smoking": provider.smoker!,
-                  "Obesity": user.bodyWeight! / (user.height! * user.height!) > 25.0,
+                  "Obesity": user.bodyWeight! / (user.height! * user.height!) > 30.0,
                   "Family history of CVD": provider.familyCVD!
                 };
 

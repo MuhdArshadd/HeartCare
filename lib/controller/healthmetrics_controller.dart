@@ -1,39 +1,139 @@
+import '../database_service.dart';
+
 class HealthMetrics {
+  final db = DatabaseConnection();
 
   //Sample flow:
   //define useQuestion = false, ansQuestion = false, value1, value2 = 0
   //1. User choose which reading to update, get the int category
   //2. Only BMI is through reading , while others can be answered through question
-  //3. When the user input and submit -> get the reading category -> update to database reading and cvd user risk on the presence of cvd risk
+  // For question, if the answer is yes that means the CVD risk is presence, while if the answer is no means the CVD risk is not presence
+  //3. When the user input and submit -> get the reading category with bool of cvd risk presence -> update to database reading and cvd user risk on the presence of cvd risk
   //4. Return the category and update the homepage ui with the reading category and last_update
 
-  //Change this function to return string
-  Future<void> updateHealthReading(int category, bool useQuestion, bool ansQuestion, double value1, double value2) async {
-    if (category == 1){
-      //call function to measure blood pressure , return the category and update to database reading and also update CVD user risk the presence of CVD risks factor
-      if (useQuestion == true){
+  Future<String> updateHealthReading(int userId, int riskId, bool useQuestion, bool ansQuestion, double value1, double value2) async {
+    String readingType = "";
+    String readingCategory = "";
+    bool riskPresence = false;
 
-      } else {
+    switch (riskId) {
+      case 1:
+        readingType = "Blood Sugar";
+        if (useQuestion) {
+          readingCategory = "Diabetes";
+          riskPresence = ansQuestion;
+        } else {
+          readingCategory = measureBS(value1);
+          riskPresence = (readingCategory == "Prediabetes" || readingCategory == "Diabetes");
+        }
+        break;
 
-      }
-    } else if (category == 2){
-      // call function to measure blood sugar, return the category and update to database reading and also update CVD user risk the presence of CVD risks factor
-      if (useQuestion == true){
+      case 2:
+        readingType = "Blood Pressure";
+        if (useQuestion) {
+          readingCategory = "Hypertension";
+          riskPresence = ansQuestion;
+        } else {
+          readingCategory = measureBP(value1, value2); // value1 = systolic, value2 = diastolic
+          riskPresence = (readingCategory == "Stage 2 Hypertension");
+        }
+        break;
 
-      } else {
+      case 3:
+        readingType = "Cholesterol";
+        if (useQuestion) {
+          readingCategory = "Hypercholesterolemia";
+          riskPresence = ansQuestion;
+        } else {
+          readingCategory = measureCL(value1); // cholesterol value
+          riskPresence = (readingCategory == "High");
+        }
+        break;
 
-      }
-    } else if (category == 3){
-      // call function to measure cholesterol level, return the category and update to database reading and also update CVD user risk the presence of CVD risks factor
-      if (useQuestion == true){
+      case 5:
+        readingType = "BMI";
+        readingCategory = measureBMI(value1, value2); // value1 = weight, value2 = height
+        riskPresence = (readingCategory.contains("Obesity") || readingCategory == "Pre-obesity");
+        break;
 
-      } else {
-
-      }
-    } else if (category == 4){
-      // call function to measure BMI, return the category and update to database reading and also update CVD user risk the presence of CVD risks factor
+      default:
+        return "Invalid risk ID";
     }
+
+    return await updateUserCVD(userId, riskId, readingType, readingCategory, riskPresence);
   }
+
+
+  Future<String> updateUserCVD(int userId, int riskId, String readingType, String readingCategory, bool riskPresence) async {
+    final now = DateTime.now();
+
+    if (db.isConnected) {
+      try {
+        // Check if record exists in health_metrics for given user and reading_type
+        final checkResult = await db.connection!.query(
+          """
+        SELECT * FROM health_metrics 
+        WHERE user_id = @userId AND reading_type = @readingType
+        """,
+          substitutionValues: {
+            'userId': userId,
+            'readingType': readingType,
+          },
+        );
+
+        if (checkResult.isEmpty) {
+          // Insert new record
+          await db.connection!.query(
+            """
+          INSERT INTO health_metrics (user_id, reading_type, health_reading_category, last_update)
+          VALUES (@userId, @readingType, @readingCategory, @now)
+          """,
+            substitutionValues: {
+              'userId': userId,
+              'readingType': readingType,
+              'readingCategory': readingCategory,
+              'now': now
+            },
+          );
+        } else {
+          // Update existing record
+          await db.connection!.query(
+            """
+          UPDATE health_metrics
+          SET health_reading_category = @readingCategory, last_update = @last_update
+          WHERE user_id = @userId AND reading_type = @readingType
+          """,
+            substitutionValues: {
+              'userId': userId,
+              'readingType': readingType,
+              'readingCategory': readingCategory,
+              'last_update': now
+            },
+          );
+        }
+
+        // Update user_risk_factor for CVD
+        await db.connection!.query(
+          """
+        UPDATE user_risk_factor
+        SET bool_risk_presence = @riskPresence, last_update = @now
+        WHERE user_id = @userId AND risk_id = @riskId
+        """,
+          substitutionValues: {
+            'userId': userId,
+            'riskId': riskId,
+            'riskPresence': riskPresence,
+            'now': now
+          },
+        );
+        return "Update successful";
+      } catch (e) {
+        return "Error: $e";
+      }
+    }
+    return "Database not connected";
+  }
+
 
   String measureBP(double systolic, double diastolic) {
     if (systolic < 120 && diastolic < 80) {

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:heartcare/controller/user_controller.dart';
 import 'package:heartcare/view/app_bar/appbar.dart';
+import 'package:heartcare/view/popup_screen/bloodpressure_reading_popup.dart';
+import 'package:heartcare/view/popup_screen/bloodsugar_reading_popup.dart';
+import 'package:heartcare/view/popup_screen/bmi_reading_popup.dart';
+import 'package:heartcare/view/popup_screen/cholesterol_reading_popup.dart';
 import 'package:heartcare/view/popup_screen/complete_profile_popup.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -122,10 +126,10 @@ class _HomepageScreenState extends State<HomepageScreen> {
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
               children: [
-                _healthReadingCard("Blood Pressure"),
-                _healthReadingCard("Blood Sugar"),
-                _healthReadingCard("Cholesterol Level"),
-                _healthReadingCard("BMI"),
+                _healthReadingCard("Blood Pressure", user!.userID),
+                _healthReadingCard("Blood Sugar", user!.userID),
+                _healthReadingCard("Cholesterol Level", user!.userID),
+                _healthReadingCard("BMI", user!.userID),
               ],
             ),
 
@@ -168,7 +172,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
     );
   }
 
-  Widget _healthReadingCard(String label) {
+  Widget _healthReadingCard(String label, int userId) {
     return _buildCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,7 +186,27 @@ class _HomepageScreenState extends State<HomepageScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                // TODO: Handle update action
+                if (label == "Blood Pressure"){
+                  showDialog(
+                    context: context,
+                    builder: (context) => BloodPressurePopup(userId: userId),
+                  );
+                } else if (label == "Blood Sugar"){
+                  showDialog(
+                    context: context,
+                    builder: (context) => BloodSugarPopup(userId: userId),
+                  );
+                } else if (label == "Cholesterol Level") {
+                  showDialog(
+                    context: context,
+                    builder: (context) => CholesterolLevelPopup(userId: userId),
+                  );
+                } else if (label == "BMI"){
+                  showDialog(
+                    context: context,
+                    builder: (context) => BmiCalculatorPopup(userId: userId),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,       // Red background

@@ -63,9 +63,9 @@ class UserController {
 
   Future<String> userCompleteProfile(UserModel user) async {
     bool userObese = false;
+    final userBMI = user.bodyWeight! / (user.height! * user.height!);
 
-    final userBMI = userObesity(user.bodyWeight, user.height);
-    if (userBMI > 25.0) {
+    if (userBMI > 30.0) {
       userObese = true;
     }
 
@@ -319,20 +319,5 @@ class UserController {
     return bmi;
   }
 
-  String getBMICategory(double bmi) {
-    if (bmi < 18.5) {
-      return "Underweight";
-    } else if (bmi < 25.0) {
-      return "Normal weight";
-    } else if (bmi < 30.0) {
-      return "Pre-obesity";
-    } else if (bmi < 35.0) {
-      return "Obesity class I";
-    } else if (bmi < 40.0) {
-      return "Obesity class II";
-    } else {
-      return "Obesity class III";
-    }
-  }
 
 }
