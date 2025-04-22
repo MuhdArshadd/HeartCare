@@ -6,7 +6,6 @@ import 'view/splash_screen.dart';
 import 'database_service.dart';
 import 'model/provider/user_provider.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(); // Load environment variables

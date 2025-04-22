@@ -4,6 +4,7 @@ import 'package:heartcare/view/homepage_screen.dart';
 import 'package:heartcare/view/profile_screen.dart';
 import 'package:heartcare/view/symptom_screen.dart';
 import 'package:heartcare/view/treatment_screen.dart';
+import '../popup_screen/add_new_popup.dart';
 import 'bottomnavbar.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -37,10 +38,29 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   void _onFabTapped() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AddPage()),
+    _showAddNewPopup(context);  // Call _showAddNewPopup with the correct context
+  }
+
+  void _showAddNewPopup(BuildContext context) async {
+    final result = await showDialog(
+      context: context,
+      builder: (context) => const AddNewPopup(),
     );
+
+    // Handle the result (either 'treatment' or 'symptom')
+    if (result == 'treatment') {
+      // Navigate to treatment page
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => TreatmentPage()),
+      );
+    } else if (result == 'symptom') {
+      // Navigate to symptom page
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => SymptomPage()),
+      );
+    }
   }
 
   @override
@@ -57,7 +77,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xff0b036c),
         shape: const StadiumBorder(),
-        onPressed: _onFabTapped,
+        onPressed: _onFabTapped, // Trigger the popup on FAB press
         child: const Icon(Icons.add_circle_outline, color: Colors.white, size: 30),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

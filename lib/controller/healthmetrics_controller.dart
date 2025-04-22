@@ -1,6 +1,6 @@
 import '../database_service.dart';
 
-class HealthMetrics {
+class HealthMetricsController {
   final db = DatabaseConnection();
 
   //Sample flow:
@@ -20,7 +20,11 @@ class HealthMetrics {
       case 1:
         readingType = "Blood Sugar";
         if (useQuestion) {
-          readingCategory = "Diabetes";
+          if (ansQuestion) {
+            readingCategory = "Confirmed Diabetes";
+          } else {
+            readingCategory = "Normal";
+          }
           riskPresence = ansQuestion;
         } else {
           readingCategory = measureBS(value1);
@@ -31,7 +35,12 @@ class HealthMetrics {
       case 2:
         readingType = "Blood Pressure";
         if (useQuestion) {
-          readingCategory = "Hypertension";
+          if (ansQuestion){
+            readingCategory = "Confirmed Hypertension";
+          }
+          else {
+            readingCategory = "Normal BP";
+          }
           riskPresence = ansQuestion;
         } else {
           readingCategory = measureBP(value1, value2); // value1 = systolic, value2 = diastolic
@@ -40,9 +49,14 @@ class HealthMetrics {
         break;
 
       case 3:
-        readingType = "Cholesterol";
+        readingType = "Cholesterol Level";
         if (useQuestion) {
-          readingCategory = "Hypercholesterolemia";
+          if (ansQuestion){
+            readingCategory = "Confirmed Hypercholesterolemia";
+          }
+          else {
+            readingCategory = "Optimal";
+          }
           riskPresence = ansQuestion;
         } else {
           readingCategory = measureCL(value1); // cholesterol value

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:heartcare/controller/healthmetrics_controller.dart';
 import '../app_bar/main_navigation.dart';
 import 'loading_processing_popup.dart';
 
@@ -13,9 +13,11 @@ class BloodPressurePopup extends StatefulWidget {
 
 class _BloodPressurePopupState extends State<BloodPressurePopup> {
   bool useQuestion = false;
-  String? ansQuestion;
+  bool? ansQuestion;
   TextEditingController systolicController = TextEditingController();
   TextEditingController diastolicController = TextEditingController();
+
+  final HealthMetricsController healthMetricsController = HealthMetricsController();
 
   @override
   void dispose() {
@@ -95,28 +97,42 @@ class _BloodPressurePopupState extends State<BloodPressurePopup> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 onPressed: () async {
-                  print('Submitted: useQuestion=$useQuestion');
-                  if (useQuestion) {
-                    print('Question answer: $ansQuestion');
-                  } else {
-                    print('Systolic: ${systolicController.text}');
-                    print('Diastolic: ${diastolicController.text}');
+                  if (useQuestion && ansQuestion == null) {
+                    AppPopup.showResult(
+                      context,
+                      isSuccess: false,
+                      message: "Please answer the questionnaire.",
+                    );
+                    return;
                   }
+
+                  double? systolic;
+                  double? diastolic;
+
+                  if (!useQuestion) {
+                    try {
+                      systolic = double.parse(systolicController.text.trim());
+                      diastolic = double.parse(diastolicController.text.trim());
+                    } catch (e) {
+                      AppPopup.showResult(
+                        context,
+                        isSuccess: false,
+                        message: "Please enter valid numeric values.",
+                      );
+                      return;
+                    }
+                  }
+
                   AppPopup.showLoading(context, message: 'Processing...');
-                  final delay = Future.delayed(const Duration(seconds: 2));
+                  try {
+                    String result = await healthMetricsController.updateHealthReading(widget.userId, 2, useQuestion,ansQuestion ?? false,systolic ?? 0.0,diastolic ?? 0.0);
 
-                  await delay; // Ensure popup is visible at least 2 seconds
+                    AppPopup.hide(context);
 
-                  // Hide loading dialog
-                  AppPopup.hide(context);
-
-                  final result = true; // from result of processing
-
-                  if (result == true) {
                     AppPopup.showResult(
                       context,
                       isSuccess: true,
-                      message: "Successfully Submit!",
+                      message: "Successfully Submitted!",
                       onDismiss: () {
                         Navigator.pushReplacement(
                           context,
@@ -124,14 +140,16 @@ class _BloodPressurePopupState extends State<BloodPressurePopup> {
                         );
                       },
                     );
-                  } else {
+                  } catch (e) {
+                    AppPopup.hide(context);
                     AppPopup.showResult(
                       context,
                       isSuccess: false,
-                      message: "Error processing the data.",
+                      message: "Error: ${e.toString()}",
                     );
                   }
                 },
+
                 child: const Text('Submit', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),),
               ),
             ],
@@ -183,12 +201,12 @@ class _BloodPressurePopupState extends State<BloodPressurePopup> {
               child: ChoiceChip(
                 label: const Text('No'),
                 labelStyle: const TextStyle(color: Colors.white),
-                selected: ansQuestion == 'No',
+                selected: ansQuestion == false,
                 selectedColor: Colors.redAccent,
                 backgroundColor: Colors.grey,
                 onSelected: (selected) {
                   setState(() {
-                    ansQuestion = selected ? 'No' : null;
+                    ansQuestion = selected ? false : null;
                   });
                 },
               ),
@@ -198,12 +216,12 @@ class _BloodPressurePopupState extends State<BloodPressurePopup> {
               child: ChoiceChip(
                 label: const Text('Yes'),
                 labelStyle: const TextStyle(color: Colors.white),
-                selected: ansQuestion == 'Yes',
+                selected: ansQuestion == true,
                 selectedColor: Colors.redAccent,
                 backgroundColor: Colors.grey,
                 onSelected: (selected) {
                   setState(() {
-                    ansQuestion = selected ? 'Yes' : null;
+                    ansQuestion = selected ? true : null;
                   });
                 },
               ),

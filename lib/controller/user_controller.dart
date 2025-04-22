@@ -52,11 +52,11 @@ class UserController {
         }
         return true;
       } catch (e) {
-        print ("Error signing up: $e");
+        print("Error signing up: $e");
         return false;
       }
     } else {
-      print ("No database connection available.");
+      print("No database connection available.");
       return false;
     }
   }
@@ -109,7 +109,8 @@ class UserController {
     }
   }
 
-  Future<void> insertUserRiskFactors(int userId, Map<String, bool> riskPresenceMap) async {
+  Future<void> insertUserRiskFactors(int userId,
+      Map<String, bool> riskPresenceMap) async {
     const Map<String, int> riskIdMap = {
       "Diabetes Mellitus": 1,
       "Hypertension": 2,
@@ -206,15 +207,16 @@ class UserController {
           UPDATE users SET password = @password WHERE email_address = @email_address
           """,
           substitutionValues: {
-            'email_address': email,       // Use the passed email
-            'password': newPassword,  // Use the passed new password
+            'email_address': email, // Use the passed email
+            'password': newPassword, // Use the passed new password
           },
         );
         return "Password update successful";
       } catch (e) {
         return "Error updating password: $e";
       }
-    } return "Database is not available";
+    }
+    return "Database is not available";
   }
 
   Future<Map<String, String>> getDiagnoseResult(int userID) async {
@@ -288,6 +290,89 @@ class UserController {
     return cvdRisks;
   }
 
+  Future<Map<String, String>> fetchRiskLevelAndLastDiagnose(int userId) async {
+    if (!db.isConnected) {
+      return {
+        "riskLevel": "Unidentified",
+        "lastDiagnose": "None",
+      };
+    }
+
+    try {
+      final results = await db.connection!.query(
+        '''
+      SELECT bool_result, recorded_at 
+      FROM CVD_RESULT
+      WHERE user_id = @userID
+      ORDER BY recorded_at DESC
+      LIMIT 1
+      ''',
+        substitutionValues: {
+          'userID': userId,
+        },
+      );
+
+      if (results.isEmpty) {
+        return {
+          "riskLevel": "Unidentified",
+          "lastDiagnose": "None",
+        };
+      }
+
+      final row = results.first;
+      final bool? hasRisk = row[0] as bool?;
+      final DateTime? lastUpdate = row[1] as DateTime?;
+
+      final riskLevel = hasRisk == null ? "Unidentified" : hasRisk ? "High Risk" : "Low Risk";
+      final lastDiagnose = lastUpdate != null ? "${lastUpdate.day}/${lastUpdate.month}/${lastUpdate.year}" : "None";
+
+      return {
+        "riskLevel": riskLevel,
+        "lastDiagnose": lastDiagnose,
+      };
+    } catch (e) {
+      print('Error retrieving CVD presence: $e');
+      return {
+        "riskLevel": "Unidentified",
+        "lastDiagnose": "None",
+      };
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchHealthReadings(int userId) async {
+    final List<Map<String, dynamic>> healthReadings = [];
+
+    if (db.isConnected) {
+      try {
+        final results = await db.connection!.query(
+          '''
+      SELECT reading_type, health_reading_category, last_update
+      FROM HEALTH_METRICS
+      WHERE user_id = @userID
+      ''',
+          substitutionValues: {
+            'userID': userId,
+          },
+        );
+
+        for (final row in results) {
+          final String readingType = row[0]?.toString() ?? 'Unknown';
+          final String category = row[1]?.toString() ?? 'N/A';
+          final DateTime? lastUpdate = row[2] as DateTime?;
+
+          healthReadings.add({
+            'readingType': readingType,
+            'category': category,
+            'lastUpdate': lastUpdate != null ? "${lastUpdate.day}/${lastUpdate.month}/${lastUpdate.year}" : 'Unknown',
+          });
+        }
+      } catch (e) {
+        print('Error retrieving health readings: $e');
+      }
+    }
+    return healthReadings;
+  }
+
 
   bool hasMissingUserData(UserModel user) {
     final fieldsToCheck = [
@@ -313,11 +398,4 @@ class UserController {
     }
     return false;
   }
-
-  double userObesity(double? weightKg, double? heightM) {
-    final bmi = weightKg! / (heightM! * heightM);
-    return bmi;
-  }
-
-
 }
