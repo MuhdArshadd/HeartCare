@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../addsymptom_screen.dart';
+
 class AddNewPopup extends StatelessWidget {
   const AddNewPopup({Key? key}) : super(key: key);
 
@@ -43,7 +45,10 @@ class AddNewPopup extends StatelessWidget {
               color: Colors.redAccent,
               onPressed: () {
                 // Symptom button logic
-                Navigator.pop(context, 'symptom');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AddSymptomScreen()),
+                );
               },
             ),
           ],
