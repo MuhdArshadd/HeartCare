@@ -30,6 +30,8 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
         title: Padding(
           padding: const EdgeInsets.only(left: 20),
           child: Image.asset(

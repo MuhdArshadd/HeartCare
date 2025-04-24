@@ -58,8 +58,12 @@ class AppPopup {
     );
 
     Future.delayed(duration, () {
-      Navigator.of(context, rootNavigator: true).pop(); // Hide popup
-      if (onDismiss != null) onDismiss();
+      // Ensure context is still valid (mounted) before popping
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop(); // Close the dialog
+        if (onDismiss != null) onDismiss(); // Trigger the refresh or callback
+      }
     });
   }
+
 }

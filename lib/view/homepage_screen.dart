@@ -202,8 +202,8 @@ class _HomepageScreenState extends State<HomepageScreen>{
               const SizedBox(height: 16),
               const Text("Things to do:", style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              _todoTile("Log Your Symptoms", Icons.checklist_sharp),
               _todoTile("Log Your Treatments", Icons.checklist_sharp),
+              _todoTile("Log Your Symptoms", Icons.checklist_sharp),
 
               const SizedBox(height: 16),
               Row(
@@ -242,47 +242,63 @@ class _HomepageScreenState extends State<HomepageScreen>{
   }
 
   Widget _healthReadingCard(String label, int userId, String healthStatus, String date) {
-    return _buildCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-          const SizedBox(height: 4),
-          Text(healthStatus, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.blueAccent),),
-          const SizedBox(height: 12),
-          Text("Last Update: $date"),
-          const Spacer(),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () async {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      if (label == "Blood Pressure") {
-                        return BloodPressurePopup(userId: userId);
-                      } else if (label == "Blood Sugar") {
-                        return BloodSugarPopup(userId: userId);
-                      } else if (label == "Cholesterol Level") {
-                        return CholesterolLevelPopup(userId: userId);
-                      } else if (label == "BMI") {
-                        return BmiCalculatorPopup(userId: userId);
-                      } else {
-                        return const SizedBox(); // fallback, shouldn't be reached
-                      }
-                    },
-                  );
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,  // Red background
-                foregroundColor: Colors.white,  // White text
+    return SizedBox( // Constrain the height
+      height: 180, // Fixed height that works for your layout
+      child: _buildCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+            const SizedBox(height: 4),
+            Expanded( // Use Expanded instead of Flexible
+              child: SingleChildScrollView( // Allow scrolling if content is too long
+                physics: const ClampingScrollPhysics(), // Disable overscroll effect
+                child: Text(
+                  healthStatus,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Colors.blueAccent,
+                  ),
+                ),
               ),
-              child: const Text("Update", style: TextStyle(fontWeight: FontWeight.bold)),
             ),
-          ),
-        ],
+
+            Text("Last Update: $date"),
+            const SizedBox(height: 8), // Replace Spacer with fixed gap
+            SizedBox(
+              height: 35,
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        if (label == "Blood Pressure") {
+                          return BloodPressurePopup(userId: userId);
+                        } else if (label == "Blood Sugar") {
+                          return BloodSugarPopup(userId: userId);
+                        } else if (label == "Cholesterol Level") {
+                          return CholesterolLevelPopup(userId: userId);
+                        } else if (label == "BMI") {
+                          return BmiCalculatorPopup(userId: userId);
+                        } else {
+                          return const SizedBox();
+                        }
+                      },
+                    );
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text("Update", style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -297,12 +313,12 @@ class _HomepageScreenState extends State<HomepageScreen>{
         title: Text(title),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: () {
-          if (title == "Log Your Symptoms") {
+          if (title == "Log Your Treatments") {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const MainNavigationScreen(selectedIndex: 1)),
             );
-          } else if (title == "Log Your Treatments") {
+          } else if (title == "Log Your Symptoms") {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const MainNavigationScreen(selectedIndex: 2)),

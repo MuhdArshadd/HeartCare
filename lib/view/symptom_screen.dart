@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:heartcare/view/symptom_details_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:heartcare/controller/symptom_controller.dart';
 import 'package:heartcare/view/app_bar/appbar.dart';
@@ -20,13 +21,7 @@ class _SymptomPageState extends State<SymptomPage> {
   List<int> symptomId = [];
   List<int> userSymptomId = [];
 
-  final Map<String, List<double>> symptomSeverityData = {
-    // Placeholder data
-    "Chest Pain": [4, 4, 4, 4, 4, 4, 4],
-    "Shortness of Breath": [2, 2, 3, 3, 4, 3, 2],
-    "Fatigue": [1, 1, 2, 2, 1, 1, 1],
-    "Dizziness": [2, 1, 1, 2, 2, 3, 1],
-  };
+  final Map<String, List<double>> symptomSeverityData = {};
 
   @override
   void initState() {
@@ -41,21 +36,21 @@ class _SymptomPageState extends State<SymptomPage> {
     final symptoms = await symptomController.getUserSymptoms(userId);
     final List<String> active = [];
     final List<String> inactive = [];
-    List<int> symptomIds = [];
-    List<int> userSymptomIds = [];
 
     final Map<String, List<double>> updatedSeverityData = {};
 
+    // Get severity averages for each symptom
+    for (var symptom in symptoms.keys) {
+      final userSymptomId = symptoms[symptom]?['userSymptomId'];
+      final severityData = await symptomController.getWeeklySeverityAverages(userSymptomId);
 
-    symptoms.forEach((symptom, data) {
-      if (data['isActive'] == true) {
+      updatedSeverityData[symptom] = severityData.values.toList();
+      if (symptoms[symptom]?['isActive'] == true) {
         active.add(symptom);
       } else {
         inactive.add(symptom);
       }
-
-      updatedSeverityData[symptom] = symptomSeverityData[symptom] ?? List.filled(7, 0.0);
-    });
+    }
 
     setState(() {
       userSymptoms = symptoms;
@@ -132,8 +127,15 @@ class _SymptomPageState extends State<SymptomPage> {
               onTap: () {
                 final id = userSymptoms[symptom]?['symptomId'];
                 final userSymptomId = userSymptoms[symptom]?['userSymptomId'];
+                final isActive = userSymptoms[symptom]?['isActive'];
 
-                print("Selected Symptom: $symptom, ID: $id, User log id: $userSymptomId");
+                print("Selected Symptom: $symptom, ID: $id, User log id: $userSymptomId, Active Status: $isActive");
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SymptomDetailPage(symptomName: symptom, id: id, userSymptomId: userSymptomId, activeSymptom: isActive),
+                  ),
+                );
               },
             ),
           )),
@@ -146,15 +148,23 @@ class _SymptomPageState extends State<SymptomPage> {
     final data = symptomSeverityData[symptom] ?? List.filled(7, 0.0);
     final dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+    Color getSeverityColor(double value) {
+      if (value <= 1) return Colors.green;
+      if (value <= 2) return Colors.orange;
+      return Colors.red;
+    }
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: SizedBox(
-        height: 80,
-        child: LineChart(
-          LineChartData(
+        height: 180,
+        child: BarChart(
+          BarChartData(
+            alignment: BarChartAlignment.spaceAround,
+            maxY: 3.5,
             minY: 0,
-            maxY: 5,
             gridData: FlGridData(show: false),
+            borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
               leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -162,44 +172,39 @@ class _SymptomPageState extends State<SymptomPage> {
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  interval: 1,
                   getTitlesWidget: (value, meta) {
                     final index = value.toInt();
                     if (index >= 0 && index < dayLabels.length) {
                       return Text(
                         dayLabels[index],
-                        style: const TextStyle(fontSize: 10, color: Colors.black87),
+                        style: const TextStyle(fontSize: 12),
                       );
                     }
                     return const SizedBox.shrink();
                   },
+                  reservedSize: 32,
                 ),
               ),
             ),
-            borderData: FlBorderData(show: false),
-            lineBarsData: [
-              LineChartBarData(
-                spots: List.generate(
-                  data.length,
-                      (index) => FlSpot(index.toDouble(), data[index]),
-                ),
-                isCurved: true,
-                color: Colors.redAccent,
-                barWidth: 2.5,
-                dotData: FlDotData(show: false),
-                belowBarData: BarAreaData(
-                  show: true,
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.redAccent.withOpacity(0.3),
-                      Colors.redAccent.withOpacity(0.05),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+            barGroups: List.generate(
+              data.length,
+                  (index) => BarChartGroupData(
+                x: index,
+                barRods: [
+                  BarChartRodData(
+                    toY: data[index],
+                    width: 18,
+                    borderRadius: BorderRadius.circular(6),
+                    color: getSeverityColor(data[index]),
+                    backDrawRodData: BackgroundBarChartRodData(
+                      show: true,
+                      toY: 3,
+                      color: Colors.grey.withOpacity(0.1),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
