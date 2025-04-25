@@ -39,12 +39,18 @@ class _SymptomPageState extends State<SymptomPage> {
 
     final Map<String, List<double>> updatedSeverityData = {};
 
-    // Get severity averages for each symptom
+    // Define our fixed day order (Monday to Sunday)
+    const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
     for (var symptom in symptoms.keys) {
       final userSymptomId = symptoms[symptom]?['userSymptomId'];
       final severityData = await symptomController.getWeeklySeverityAverages(userSymptomId);
 
-      updatedSeverityData[symptom] = severityData.values.toList();
+      // Create an ordered list of values
+      final orderedValues = dayOrder.map((day) => severityData[day] ?? 0.0).toList();
+
+      updatedSeverityData[symptom] = orderedValues;
+
       if (symptoms[symptom]?['isActive'] == true) {
         active.add(symptom);
       } else {
@@ -146,6 +152,7 @@ class _SymptomPageState extends State<SymptomPage> {
 
   Widget _buildSeverityGraph(String symptom) {
     final data = symptomSeverityData[symptom] ?? List.filled(7, 0.0);
+    print (data);
     final dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     Color getSeverityColor(double value) {
@@ -161,7 +168,7 @@ class _SymptomPageState extends State<SymptomPage> {
         child: BarChart(
           BarChartData(
             alignment: BarChartAlignment.spaceAround,
-            maxY: 3.5,
+            maxY: 3,
             minY: 0,
             gridData: FlGridData(show: false),
             borderData: FlBorderData(show: false),

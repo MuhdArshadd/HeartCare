@@ -286,8 +286,43 @@ class UserController {
         print('Error retrieving CVD presence: $e');
       }
     }
-
+    print (cvdRisks);
     return cvdRisks;
+  }
+
+  Future<Map<String, String>> getUserActiveSymptoms(int userId) async {
+    final Map<String, String> userSymptoms = {};
+
+    if (db.isConnected) {
+      try {
+        final results = await db.connection!.query(
+          """
+          SELECT s.symptom_name, us.last_update
+          FROM symptom s 
+          JOIN user_symptom us ON s.symptom_id = us.symptom_id
+          WHERE us.user_id = @userId AND us.bool_symptom_active = true
+          """,
+          substitutionValues: {
+            'userId': userId,
+          },
+        );
+
+        for (final row in results) {
+          final symptomName = row[0] as String;
+          final lastUpdate = row[1] as DateTime;
+
+          userSymptoms[symptomName] = '${lastUpdate.day}/${lastUpdate.month}/${lastUpdate.year}';
+        }
+
+        return userSymptoms;
+      } catch (e) {
+        print("Error fetching symptoms: $e");
+        return {};
+      }
+    } else {
+      print("Database not connected.");
+      return {};
+    }
   }
 
   Future<Map<String, String>> fetchRiskLevelAndLastDiagnose(int userId) async {

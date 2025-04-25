@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:heartcare/controller/symptom_controller.dart';
 import 'package:heartcare/controller/user_controller.dart';
 import 'package:heartcare/view/popup_screen/diagnose_result_popup.dart';
 import 'package:provider/provider.dart';
+import '../controller/cvd_predictor.dart';
 import '../model/provider/user_provider.dart';
 
 class DiagnosePage extends StatefulWidget {
@@ -20,7 +22,7 @@ class _DiagnosePageState extends State<DiagnosePage> {
 
   Map<String, String> cvdDiagnoseResult = {};
   Map<String, Map<String, String>> cvdRisks = {};
-  List<Map<String, String>> symptoms = [];
+  late Future<Map<String, String>> futureSymptoms;
 
   bool isLoading = true;
 
@@ -55,7 +57,7 @@ class _DiagnosePageState extends State<DiagnosePage> {
 
     cvdRisks = await userController.getCVDpresence(user.userID);
 
-    symptoms = []; // Simulate no symptoms logged
+    futureSymptoms = userController.getUserActiveSymptoms(user.userID);
 
     setState(() {
       isLoading = false;
@@ -106,10 +108,23 @@ class _DiagnosePageState extends State<DiagnosePage> {
             const SizedBox(height: 20),
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text("Symptoms of CVD (Logged by user)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              child: Text("Active Symptoms of CVD (Logged by user)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ),
             const SizedBox(height: 8),
-            symptoms.isEmpty ? _buildEmptySymptomsBox() : _buildSymptomsTable(),
+            FutureBuilder<Map<String, String>>(
+              future: futureSymptoms,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return const Text("Failed to load symptoms.");
+                } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                  return _buildSymptomsTable(snapshot.data!);
+                } else {
+                  return _buildEmptySymptomsBox();
+                }
+              },
+            ),
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: () async {
@@ -136,29 +151,63 @@ class _DiagnosePageState extends State<DiagnosePage> {
                   ),
                 );
 
-                await Future.delayed(const Duration(seconds: 5));
+                try {
+                  final userProvider = Provider.of<UserProvider>(context, listen: false);
+                  final user = userProvider.user;
 
-                // Close loading dialog
-                Navigator.of(context).pop();
+                  if (user == null) throw Exception("User data is unavailable.");
 
-                // Show result popup
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    const String riskLevel = "High"; // Replace with backend result
-                    return DiagnoseResultDialog(
-                      riskLevel: riskLevel,
-                      onAccept: () {
-                        Navigator.of(context).pop();
-                        // Handle "Yes" logic
-                      },
-                      onDecline: () {
-                        Navigator.of(context).pop();
-                        //_initializeData(); // Refresh the Diagnose Page state
-                      },
-                    );
-                  },
-                );
+                  final symptoms = await userController.getUserActiveSymptoms(user.userID);
+                  final cvdRisks = await userController.getCVDpresence(user.userID);
+
+                  final predictor = CvdPredictor();
+                  await predictor.loadModel();
+
+                  final riskPrediction = await predictor.predictRisk(
+                    symptoms: symptoms,
+                    cvdRisks: cvdRisks,
+                    userAge: user.age!,
+                    userGender: user.sex!,
+                  );
+
+
+                  predictor.dispose();
+
+                  // Close loading dialog
+                  if (mounted) Navigator.of(context).pop();
+
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return DiagnoseResultDialog(
+                        riskLevel: riskPrediction,
+                        onAccept: () {
+                          Navigator.of(context).pop();
+                          // Optionally update database or UI
+                        },
+                        onDecline: () {
+                          Navigator.of(context).pop();
+                          // _initializeData(); // Optionally refresh
+                        },
+                      );
+                    },
+                  );
+                } catch (e) {
+                  if (mounted) Navigator.of(context).pop();
+                  showDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text("Diagnosis Failed"),
+                      content: Text("An error occurred during prediction: $e"),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text("OK"),
+                        )
+                      ],
+                    ),
+                  );
+                }
               },
 
               style: ElevatedButton.styleFrom(
@@ -229,26 +278,28 @@ class _DiagnosePageState extends State<DiagnosePage> {
     );
   }
 
-  Widget _buildSymptomsTable() {
+  Widget _buildSymptomsTable(Map<String, String> symptoms) {
     return Table(
       border: TableBorder.all(color: Colors.grey),
       columnWidths: const {
         0: FlexColumnWidth(2),
         1: FlexColumnWidth(1.5),
       },
-      children: symptoms.map((symptom) {
+      children: symptoms.entries.map((entry) {
+        final name = entry.key;
+        final date = entry.value;
         return TableRow(children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text(symptom['name']!),
+            child: Text(name),
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Logged", style: TextStyle(fontWeight: FontWeight.bold)),
-                Text("Last Update: ${symptom['date']!}", style: const TextStyle(fontSize: 10)),
+                const Text("Active", style: TextStyle(fontWeight: FontWeight.bold)),
+                Text("Last Update: $date", style: const TextStyle(fontSize: 10)),
               ],
             ),
           ),

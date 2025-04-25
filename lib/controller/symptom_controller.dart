@@ -240,20 +240,28 @@ class SymptomController {
       try {
         final result = await db.connection!.query(
           """
-        SELECT AVG(severity) AS average_severity
-        FROM USER_SYMPTOM_LOG
-        WHERE user_symptom_id = @user_symptom_id AND recorded_at_date = @date
-        """,
+      SELECT AVG(severity) AS average_severity
+      FROM USER_SYMPTOM_LOG
+      WHERE user_symptom_id = @user_symptom_id AND recorded_at_date = @date
+      """,
           substitutionValues: {
             'user_symptom_id': userSymptomId,
             'date': DateFormat('yyyy-MM-dd').format(date),
           },
         );
 
-        print('Retrieved severity: ${result.first[0]}');
+        print(result.first[0]);
 
         if (result.isNotEmpty && result.first[0] != null) {
-          return (result.first[0] as int).toDouble();
+          // First try parsing as double, then as int if that fails
+          final value = result.first[0];
+          if (value is num) {
+            return value.toDouble();
+          } else if (value is String) {
+            return double.tryParse(value) ?? 0.0;
+          } else {
+            return 0.0;
+          }
         } else {
           return 0.0; // not logged during that day
         }
