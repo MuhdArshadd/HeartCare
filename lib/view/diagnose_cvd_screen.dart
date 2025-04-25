@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:heartcare/controller/symptom_controller.dart';
 import 'package:heartcare/controller/user_controller.dart';
 import 'package:heartcare/view/popup_screen/diagnose_result_popup.dart';
 import 'package:provider/provider.dart';
@@ -170,6 +169,12 @@ class _DiagnosePageState extends State<DiagnosePage> {
                     userGender: user.sex!,
                   );
 
+                  //Update CVD result
+                  if (riskPrediction == "Low Risk"){
+                    userController.updateCVDResult(user.userID, false);
+                  } else if (riskPrediction == "High Risk"){
+                    userController.updateCVDResult(user.userID, true);
+                  }
 
                   predictor.dispose();
 
@@ -183,11 +188,11 @@ class _DiagnosePageState extends State<DiagnosePage> {
                         riskLevel: riskPrediction,
                         onAccept: () {
                           Navigator.of(context).pop();
-                          // Optionally update database or UI
+                          // AI TREATMENT IMPLEMENTATION
                         },
                         onDecline: () {
                           Navigator.of(context).pop();
-                          // _initializeData(); // Optionally refresh
+                          _initializeData();
                         },
                       );
                     },

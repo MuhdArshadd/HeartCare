@@ -25,7 +25,6 @@ class _HomepageScreenState extends State<HomepageScreen>{
   DateTime currentDate = DateTime.now();
   bool _isLoading = false;
 
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -64,7 +63,6 @@ class _HomepageScreenState extends State<HomepageScreen>{
       });
     }
   }
-
 
   Future<Map<String, String>> _fetchRiskData() async {
     final user = Provider.of<UserProvider>(context, listen: false).user;
@@ -121,7 +119,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
                           SizedBox(height: 4),
                           Text("HeartCare AI detects your risk of cardiovascular disease."),
                           SizedBox(height: 8),
-                          Center(child: Icon(Icons.favorite, size: 64, color: Colors.red)),
+                          Center(child: Icon(_getIconForRiskLevel(riskLevel), size: 64, color: Colors.red)),
                           SizedBox(height: 20),
                           Text("Risk Level: $riskLevel", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
                           Text("Last Diagnose: $dateDiagnose"),
@@ -228,6 +226,16 @@ class _HomepageScreenState extends State<HomepageScreen>{
     );
   }
 
+  IconData _getIconForRiskLevel(String level) {
+    switch (level.toLowerCase()) {
+      case 'high risk':
+        return Icons.heart_broken;
+      case 'low risk':
+        return Icons.favorite;
+      default:
+        return Icons.favorite_border;
+    }
+  }
 
   Widget _buildCard({required Widget child}) {
     return Container(

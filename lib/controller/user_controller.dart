@@ -253,6 +253,50 @@ class UserController {
     return result;
   }
 
+  Future<void> updateCVDResult (int userId, bool result) async {
+    if (db.isConnected) {
+      try {
+        final results = await db.connection!.query(
+          '''
+          SELECT *
+          FROM CVD_RESULT
+          WHERE user_id = @userID
+          ''',
+          substitutionValues: {
+            'userID': userId,
+          },
+        );
+
+        if (results.isEmpty){
+          await db.connection!.query(
+            '''
+            INSERT INTO CVD_RESULT (user_id, bool_result, recorded_at)
+            VALUES (@userID, @result, NOW())
+            ''',
+            substitutionValues: {
+              'userID': userId,
+              'result': result,
+            },
+          );
+        }else if (results.isNotEmpty){
+          await db.connection!.query(
+            '''
+            UPDATE CVD_RESULT
+            SET bool_result = @result, recorded_at = NOW()
+            WHERE user_id = @userID
+            ''',
+            substitutionValues: {
+              'userID': userId,
+              'result': result,
+            },
+          );
+        }
+      } catch (e) {
+        print('Error retrieving health readings: $e');
+      }
+    }
+  }
+
   Future<Map<String, Map<String, String>>> getCVDpresence(int userID) async {
     final Map<String, Map<String, String>> cvdRisks = {};
 
