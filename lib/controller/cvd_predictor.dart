@@ -31,7 +31,8 @@ class CvdPredictor {
     try {
       _interpreter.run(input, output);
       final prediction = output[0][0];
-      return prediction > 0.5 ? 'High Risk' : 'Low Risk';
+      print (prediction);
+      return prediction > 0.02 ? 'High Risk' : 'Low Risk';
     } catch (e) {
       throw Exception("Prediction failed: $e");
     }

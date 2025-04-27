@@ -33,7 +33,6 @@ class AddNewPopup extends StatelessWidget {
               icon: Icons.medical_services,
               color: Colors.green,
               onPressed: () {
-                // Treatment button logic
                 Navigator.pop(context, 'treatment');
               },
             ),
@@ -44,11 +43,7 @@ class AddNewPopup extends StatelessWidget {
               icon: Icons.coronavirus_sharp,
               color: Colors.redAccent,
               onPressed: () {
-                // Symptom button logic
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AddSymptomScreen()),
-                );
+                Navigator.pop(context, 'symptom');
               },
             ),
           ],

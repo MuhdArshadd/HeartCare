@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert'; // for utf8.decode
 import '../database_service.dart';
 
 class SymptomController {

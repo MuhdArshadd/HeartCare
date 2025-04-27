@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:heartcare/view/add_screen.dart';
 import 'package:heartcare/view/homepage_screen.dart';
 import 'package:heartcare/view/profile_screen.dart';
 import 'package:heartcare/view/symptom_screen.dart';
 import 'package:heartcare/view/treatment_screen.dart';
+import '../addsymptom_screen.dart';
+import '../addtreatment_screen.dart';
 import '../popup_screen/add_new_popup.dart';
 import 'bottomnavbar.dart';
 
@@ -49,16 +50,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     // Handle the result (either 'treatment' or 'symptom')
     if (result == 'treatment') {
-      // Navigate to treatment page
+      // Navigate to add treatment page
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => TreatmentPage()),
+        MaterialPageRoute(builder: (context) => const AddTreatmentPage()),
       );
     } else if (result == 'symptom') {
-      // Navigate to symptom page
+      // Navigate to add symptom page
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => SymptomPage()),
+        MaterialPageRoute(builder: (context) => const AddSymptomScreen()),
       );
     }
   }
