@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:heartcare/controller/treatment_controller.dart';
+import 'package:heartcare/view/popup_screen/loading_processing_popup.dart';
+import 'package:provider/provider.dart';
+
+import '../model/provider/user_provider.dart';
+import 'app_bar/main_navigation.dart';
 
 class AddTreatmentPage extends StatefulWidget {
   const AddTreatmentPage({Key? key}) : super(key: key);
@@ -8,6 +14,8 @@ class AddTreatmentPage extends StatefulWidget {
 }
 
 class _AddTreatmentPageState extends State<AddTreatmentPage> {
+  final TreatmentController treatmentController = TreatmentController();
+
   int _selectedCategoryIndex = 0;
   final List<String> _categories = ['Medication', 'Supplement', 'Diet', 'Physical Activity'];
 
@@ -28,9 +36,9 @@ class _AddTreatmentPageState extends State<AddTreatmentPage> {
   };
 
   final List<IconData> _categoryIcons = [
-    Icons.medical_services,  // More appropriate for medication
+    Icons.medication,  // More appropriate for medication
     Icons.local_pharmacy,         // Better for supplements
-    Icons.restaurant_menu,    // More specific for diet
+    Icons.restaurant,    // More specific for diet
     Icons.directions_run,     // Better for physical activity
   ];
 
@@ -46,6 +54,8 @@ class _AddTreatmentPageState extends State<AddTreatmentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<UserProvider>(context).user;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Treatment'),
@@ -72,7 +82,7 @@ class _AddTreatmentPageState extends State<AddTreatmentPage> {
             _buildTimeSelection(),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: _submitForm,
+              onPressed: () => _submitForm(user!.userID),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue.shade700,
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -431,7 +441,7 @@ class _AddTreatmentPageState extends State<AddTreatmentPage> {
     );
   }
 
-  void _submitForm() {
+  Future<void> _submitForm(int userId) async {
     if (_selectedCategoryIndex < 2) {
       if (_nameController.text.isEmpty ||
           _dosageController.text.isEmpty ||
@@ -471,12 +481,40 @@ class _AddTreatmentPageState extends State<AddTreatmentPage> {
     // For now, print to debug console
     debugPrint('Treatment Data: $treatmentData');
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Treatment added successfully')),
-    );
-
     // TODO: send `treatmentData` to backend here
+    try {
+      final result = await treatmentController.addTreatment(userId, treatmentData);
 
+      if (result == true){
+        AppPopup.hide(context);
+        AppPopup.showResult(
+          context,
+          isSuccess: true,
+          message: "Successfully Added!",
+          onDismiss: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const MainNavigationScreen(selectedIndex: 1)),
+            );
+          },
+        );
+      }
+      else {
+        AppPopup.hide(context);
+        AppPopup.showResult(
+          context,
+          isSuccess: false,
+          message: "Failed to add treatment.",
+        );
+      }
+    } catch (e) {
+      AppPopup.hide(context);
+      AppPopup.showResult(
+        context,
+        isSuccess: false,
+        message: "Error: ${e.toString()}",
+      );
+    }
     _clearForm();
   }
 

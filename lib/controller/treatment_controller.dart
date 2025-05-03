@@ -1,6 +1,9 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../database_service.dart';
+import '../model/treatment_model.dart';
 
 class TreatmentController {
   final db = DatabaseConnection();
@@ -17,15 +20,15 @@ class TreatmentController {
             // Insert into TREATMENT table
             final result = await ctx.query(
               """
-              INSERT INTO TREATMENT (user_id, category, treatment_name, notes, treatment_times_id, bool_status, created_at)
-              VALUES (@userId, @category, @name, @notes, @timeSlotId, true, NOW())
+              INSERT INTO TREATMENT (user_id, category, treatment_name, notes, treatment_times_id, created_at)
+              VALUES (@userId, @category, @name, @notes, @timeSlotId, NOW())
               RETURNING treatment_id
               """,
               substitutionValues: {
                 'userId': userId,
                 'category': treatmentData['category'],
                 'name': treatmentData['name'],
-                'notes': treatmentData['description'] ?? '',
+                'notes': treatmentData['description'],
                 'timeSlotId': timeSlotId,
               },
             );
@@ -53,7 +56,7 @@ class TreatmentController {
             await ctx.query(
               """
               INSERT INTO TREATMENT_LOG (treatment_id, status, recorded_at)
-              VALUES (@treatmentId, 'Idle', NOW())
+              VALUES (@treatmentId, 'Pending', NOW())
               """,
               substitutionValues: {
                 'treatmentId': treatmentId
@@ -70,7 +73,7 @@ class TreatmentController {
     return false;
   }
 
-  Future<List<Map<String, dynamic>>> getTreatment(int userId, DateTime treatmentDate) async {
+  Future<List<TreatmentTimeline>> getTreatment(int userId, DateTime treatmentDate) async {
     if (db.isConnected) {
       try {
         final conn = db.connection!;
@@ -90,18 +93,21 @@ class TreatmentController {
         """,
           substitutionValues: {
             'userId': userId,
+            'date': DateFormat('yyyy-MM-dd').format(treatmentDate),
           },
         );
 
-        List<Map<String, dynamic>> treatments = [];
+        // Step 2: Organize the treatments by their timeline ID (e.g., Morning, Afternoon, etc.)
+        Map<int, TreatmentTimeline> timelineMap = {};
 
-        // Step 2: For each treatment, get its logs
+        // Step 3: For each treatment, get its logs and map to the appropriate timeline
         for (final row in result) {
           int treatmentId = row[0];
+          int treatmentTimesId = row[4]; // This will correspond to your timeline ID (Morning, Afternoon, etc.)
 
           final logsResult = await conn.query(
             """
-          SELECT status, recorded_at
+          SELECT status
           FROM treatment_log
           WHERE treatment_id = @treatmentId AND recorded_at = @date
           """,
@@ -113,29 +119,50 @@ class TreatmentController {
 
           List<Map<String, dynamic>> logs = logsResult.map((logRow) {
             return {
-              'status': logRow[0] ?? "Idle",
-              'recorded_at': logRow[1],
+              'status': logRow[0] ?? "Pending",
             };
           }).toList();
 
-          // Step 3: Build the final treatment object
-          Map<String, dynamic> treatment = {
-            'treatment_id': row[0],
-            'category': row[1],
-            'name': row[2],
-            'notes': row[3],
-            'treatment_times_id': row[4],
-            'dosage_per_intake': row[5],
-            'unit_of_dosage': row[6],
-            'quantity_per_session': row[7],
-            'medication_type': row[8],
-            'logs': logs,
-          };
+          // Step 4: Create TreatmentTask object
+          TreatmentTask task = TreatmentTask(
+            id: row[0], // treatment_id
+            treatmentCategory: row[1], // category (e.g., Diet, Medication)
+            icon: getCategoryIcon(row[1]),
+            name: row[2], // treatment_name
+            treatmentTimesId: treatmentTimesId,
+            dosage: row[5], // dosage_per_intake
+            unit: row[6], // unit_of_dosage
+            sessionCount: row[7], // quantity_per_session
+            medicationType: row[8], // medication_type
+            notes: row[3], // notes
+            isCompleted: logs.any((log) => log['status'] == 'Completed'),
+            isSkipped: logs.any((log) => log['status'] == 'Skipped'),
+            lastActionTime: DateTime.now(), // You can adjust this if you have specific timestamps
+          );
 
-          treatments.add(treatment);
+          // Step 5: Add the task to the correct timeline
+          if (!timelineMap.containsKey(treatmentTimesId)) {
+            timelineMap[treatmentTimesId] = TreatmentTimeline(
+              id: treatmentTimesId,
+              name: getTimelineName(treatmentTimesId), // Map timeline ID to name
+              timeRange: getTimeRange(treatmentTimesId), // Map timeline ID to time range
+              icon: getTimelineIcon(treatmentTimesId), // Map timeline ID to icon
+              treatments: [],
+            );
+          }
+
+          timelineMap[treatmentTimesId]?.treatments.add(task);
+        }
+        //DEBUG
+        for (final timeline in timelineMap.values) {
+          print('Timeline ID: ${timeline.id}, Name: ${timeline.name}');
+          for (final treatment in timeline.treatments) {
+            print('  Treatment: ${treatment.name}, Completed: ${treatment.isCompleted}, Skipped: ${treatment.isSkipped}, Icon: ${treatment.icon}');
+          }
         }
 
-        return treatments;
+        // Step 6: Return the list of TreatmentTimelines
+        return timelineMap.values.toList();
 
       } catch (e) {
         print('Error in getTreatment: $e');
@@ -147,18 +174,17 @@ class TreatmentController {
 /*[
   {
     "treatment_id": 1,
-    "category": "Diet",
+    "category": "Diet", // There are 4 category (Medication, Supplement, Diet, Physical Activity)
     "name": "Low Sodium Diet",
-    "notes": "Avoid salty foods",
-    "treatment_times_id": 1,
-    "dosage_per_intake": null,
-    "unit_of_dosage": null,
-    "quantity_per_session": null,
-    "medication_type": null,
+    "notes": "Avoid salty foods", // No notes or have notes
+    "treatment_times_id": 1, // 1 to 4
+    "dosage_per_intake": null, // Applicable to Medication or Supplement only
+    "unit_of_dosage": null, // (mg, ml, etc)Applicable to Medication or Supplement only
+    "quantity_per_session": null, // Applicable to Medication or Supplement only
+    "medication_type": null, // (tablet, pill, liquid etc) Applicable to Medication or Supplement only
     "logs": [
       {
         "status": "Completed", (Completed, Skipped, Idle)
-        "recorded_at": "2025-04-27T08:00:00Z"
       }
     ]
   },
@@ -169,11 +195,10 @@ class TreatmentController {
   Future<bool> updateStatusTreatment(int treatmentId) async {
     if (db.isConnected) {
       try {
-        // Check if a treatment log exists on the specified date
         await db.connection!.query(
           """
           UPDATE TREATMENT
-          SET last_treatment_at = NOW()
+          SET last_treatment_at = NOW(),
           WHERE treatment_id = @treatmentId
           """,
           substitutionValues: {
@@ -263,5 +288,65 @@ class TreatmentController {
     } else {
       throw Exception('Invalid time of day: $timeOfDay');
     }
+  }
+}
+
+String getTimelineName(int treatmentTimesId) {
+  switch (treatmentTimesId) {
+    case 1:
+      return 'Morning';
+    case 2:
+      return 'Afternoon';
+    case 3:
+      return 'Evening';
+    case 4:
+      return 'Night';
+    default:
+      return 'Unknown';
+  }
+}
+
+String getTimeRange(int treatmentTimesId) {
+  switch (treatmentTimesId) {
+    case 1:
+      return '6:00 AM – 11:59 AM';
+    case 2:
+      return '12:00 PM – 5:59 PM';
+    case 3:
+      return '6:00 PM – 8:59 PM';
+    case 4:
+      return '9:00 PM – 5:59 AM';
+    default:
+      return 'Unknown';
+  }
+}
+
+IconData getCategoryIcon(String category) {
+  switch (category) {
+    case 'Medication':
+      return Icons.medication;
+    case 'Supplement':
+      return Icons.local_pharmacy;
+    case 'Diet':
+      return Icons.restaurant;
+    case 'Physical Activity':
+      return Icons.directions_run;
+    default:
+      return Icons.help_outline;
+  }
+}
+
+IconData getTimelineIcon(int treatmentTimesId) {
+  switch (treatmentTimesId) {
+    case 1:
+      return Icons.wb_sunny;
+    case 2:
+      return Icons.light_mode;
+    case 3:
+      return Icons.nights_stay;
+    case 4:
+      return Icons.bedtime;
+    default:
+      return Icons.help_outline;
   }
 }
