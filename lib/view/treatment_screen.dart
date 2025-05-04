@@ -94,6 +94,7 @@ class _TreatmentPageState extends State<TreatmentPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: CustomAppBar(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -130,7 +131,7 @@ class _TreatmentPageState extends State<TreatmentPage> {
             const SizedBox(height: 24),
             _buildProgressIndicator(),
             const SizedBox(height: 24),
-            ..._displayTimelines.map((timeline) => _buildTimelineSection(timeline)).toList(),
+            ...(_displayTimelines.isEmpty ? [ _buildNoTimelineMessage() ] : _displayTimelines.map((timeline) => _buildTimelineSection(timeline)).toList()),
           ],
         ),
       ),
@@ -165,6 +166,22 @@ class _TreatmentPageState extends State<TreatmentPage> {
     );
   }
 
+  Widget _buildNoTimelineMessage() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(top: 20),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Text(
+        'No treatment timelines or any treatment task available for the selected date.',
+        style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.black54),
+      ),
+    );
+  }
+
   Widget _buildTimelineSection(TreatmentTimeline timeline) {
     final hasTreatments = timeline.treatments.isNotEmpty;
 
@@ -196,7 +213,6 @@ class _TreatmentPageState extends State<TreatmentPage> {
       ),
     );
   }
-
 
   Widget _buildTreatmentCard(int timelineId, TreatmentTask task) {
     return Container(

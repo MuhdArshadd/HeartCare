@@ -153,14 +153,13 @@ class TreatmentController {
 
           timelineMap[treatmentTimesId]?.treatments.add(task);
         }
-        //DEBUG
-        for (final timeline in timelineMap.values) {
-          print('Timeline ID: ${timeline.id}, Name: ${timeline.name}');
-          for (final treatment in timeline.treatments) {
-            print('  Treatment: ${treatment.name}, Completed: ${treatment.isCompleted}, Skipped: ${treatment.isSkipped}, Icon: ${treatment.icon}');
-          }
-        }
-
+        // //DEBUG
+        // for (final timeline in timelineMap.values) {
+        //   print('Timeline ID: ${timeline.id}, Name: ${timeline.name}');
+        //   for (final treatment in timeline.treatments) {
+        //     print('  Treatment: ${treatment.name}, Completed: ${treatment.isCompleted}, Skipped: ${treatment.isSkipped}, Icon: ${treatment.icon}');
+        //   }
+        // }
         // Step 6: Return the list of TreatmentTimelines
         return timelineMap.values.toList();
 
@@ -179,12 +178,12 @@ class TreatmentController {
     "notes": "Avoid salty foods", // No notes or have notes
     "treatment_times_id": 1, // 1 to 4
     "dosage_per_intake": null, // Applicable to Medication or Supplement only
-    "unit_of_dosage": null, // (mg, ml, etc)Applicable to Medication or Supplement only
+    "unit_of_dosage": null, // ('mg', 'ml', 'g', 'IU') - Applicable to Medication or Supplement only
     "quantity_per_session": null, // Applicable to Medication or Supplement only
-    "medication_type": null, // (tablet, pill, liquid etc) Applicable to Medication or Supplement only
+    "medication_type": null, // ('Tablet', 'Capsule', 'Liquid', 'Injection') - Applicable to Medication or Supplement only
     "logs": [
       {
-        "status": "Completed", (Completed, Skipped, Idle)
+        "status": "Completed", (Completed, Skipped, Pending)
       }
     ]
   },
