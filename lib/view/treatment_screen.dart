@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:heartcare/controller/treatment_controller.dart';
 import 'package:heartcare/view/app_bar/appbar.dart';
+import 'package:heartcare/view/popup_screen/treatment_delete_popup.dart';
 import 'package:provider/provider.dart';
 import '../model/provider/user_provider.dart';
 import '../model/treatment_model.dart';
@@ -19,6 +20,8 @@ class _TreatmentPageState extends State<TreatmentPage> {
   double _dailyProgress = 0.0;
   bool _isLoading = true;
   bool _hasError = false;
+  bool _isButtonDisabled = false;
+
 
   late List<TreatmentTimeline> _displayTimelines = [];
 
@@ -80,15 +83,72 @@ class _TreatmentPageState extends State<TreatmentPage> {
     });
   }
 
-  void _onToggleStatus(int timelineId, int taskId, bool isComplete) {
-    setState(() {
-      final timeline = _displayTimelines.firstWhere((t) => t.id == timelineId);
-      final task = timeline.treatments.firstWhere((t) => t.id == taskId);
-      task.isCompleted = isComplete;
-      task.isSkipped = !isComplete;
-      task.lastActionTime = DateTime.now();
-      _updateProgress();
+  void _onToggleStatus(int timelineId, int taskId, {required bool markCompleted}) async {
+    if (_isButtonDisabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Hold on! Please wait a moment before pressing again."),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isButtonDisabled = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      setState(() => _isButtonDisabled = false);
     });
+
+    final timeline = _displayTimelines.firstWhere((t) => t.id == timelineId);
+    final task = timeline.treatments.firstWhere((t) => t.id == taskId);
+
+    if (markCompleted) {
+      if (task.isCompleted) {
+        task.isCompleted = false;
+      } else {
+        task.isCompleted = true;
+        task.isSkipped = false;
+      }
+      await _handleAction(task.id, task.isCompleted ? 'Completed' : 'Pending', _selectedDate);
+    } else {
+      if (task.isSkipped) {
+        task.isSkipped = false;
+      } else {
+        task.isSkipped = true;
+        task.isCompleted = false;
+      }
+      await _handleAction(task.id, task.isSkipped ? 'Skipped' : 'Pending', _selectedDate);
+    }
+    task.lastActionTime = DateTime.now();
+    setState(() {});
+    _updateProgress();
+  }
+
+  Future<void> _handleAction(int treatmentId, String status, DateTime date) async {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    bool success = await treatmentController.logTreatment(user!.userID, treatmentId, date, status);
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Treatment marked as $status."),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Failed to update treatment. Try again later."),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   @override
@@ -215,53 +275,56 @@ class _TreatmentPageState extends State<TreatmentPage> {
   }
 
   Widget _buildTreatmentCard(int timelineId, TreatmentTask task) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(task.icon, color: Colors.blueGrey), // Use any color you like
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  task.name,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+    return GestureDetector(
+          onLongPress: () => showDeleteTreatmentPopup(context: context, task: task),
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(10),
+          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(task.icon, color: Colors.blueGrey), // Use any color you like
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    task.name,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          if (task.dosage != null && task.unit != null && task.sessionCount != null && task.medicationType != null)
-            Text('${task.dosage} ${task.unit}, ${task.sessionCount} ${task.medicationType}', style: const TextStyle(color: Colors.grey)),
-          if (task.notes != null && task.notes != '')
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text('Notes: ${task.notes}', style: const TextStyle(fontSize: 13)),
+              ],
             ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                icon: Icon(task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked),
-                label: Text(task.isCompleted ? 'Completed' : 'Mark Complete'),
-                onPressed: () => _onToggleStatus(timelineId, task.id, true),
+            if (task.dosage != null && task.unit != null && task.sessionCount != null && task.medicationType != null)
+              Text('${task.dosage} ${task.unit}, ${task.sessionCount} ${task.medicationType}', style: const TextStyle(color: Colors.grey)),
+            if (task.notes != null && task.notes != '')
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text('Notes: ${task.notes}', style: const TextStyle(fontSize: 13)),
               ),
-              TextButton.icon(
-                icon: Icon(task.isSkipped ? Icons.cancel : Icons.remove_circle_outline),
-                label: Text(task.isSkipped ? 'Skipped' : 'Skip'),
-                onPressed: () => _onToggleStatus(timelineId, task.id, false),
-              ),
-            ],
-          ),
-        ],
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  icon: Icon(task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked),
+                  label: Text(task.isCompleted ? 'Completed' : 'Mark Complete'),
+                  onPressed: () => _onToggleStatus(timelineId, task.id, markCompleted: true),
+                ),
+                TextButton.icon(
+                  icon: Icon(task.isSkipped ? Icons.cancel : Icons.remove_circle_outline),
+                  label: Text(task.isSkipped ? 'Skipped' : 'Skip'),
+                  onPressed: () => _onToggleStatus(timelineId, task.id,  markCompleted: false),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

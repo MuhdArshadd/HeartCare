@@ -117,6 +117,11 @@ class TreatmentController {
             },
           );
 
+          // DEBUG: Print raw log rows before mapping
+          for (final logRow in logsResult) {
+            print('Fetched logRow[0] (status): ${logRow[0]}');
+          }
+
           List<Map<String, dynamic>> logs = logsResult.map((logRow) {
             return {
               'status': logRow[0] ?? "Pending",
@@ -153,13 +158,31 @@ class TreatmentController {
 
           timelineMap[treatmentTimesId]?.treatments.add(task);
         }
-        // //DEBUG
-        // for (final timeline in timelineMap.values) {
-        //   print('Timeline ID: ${timeline.id}, Name: ${timeline.name}');
-        //   for (final treatment in timeline.treatments) {
-        //     print('  Treatment: ${treatment.name}, Completed: ${treatment.isCompleted}, Skipped: ${treatment.isSkipped}, Icon: ${treatment.icon}');
-        //   }
-        // }
+        // DEBUG: Print all fetched data grouped by timelines
+        for (final timeline in timelineMap.values) {
+          print('---');
+          print('Timeline ID: ${timeline.id}');
+          print('Name: ${timeline.name}');
+          print('Time Range: ${timeline.timeRange}');
+          print('Icon: ${timeline.icon}');
+          print('Treatments:');
+
+          for (final treatment in timeline.treatments) {
+            print('  - Treatment ID: ${treatment.id}');
+            print('    Category: ${treatment.treatmentCategory}');
+            print('    Name: ${treatment.name}');
+            print('    Notes: ${treatment.notes}');
+            print('    Dosage: ${treatment.dosage}');
+            print('    Unit: ${treatment.unit}');
+            print('    Session Count: ${treatment.sessionCount}');
+            print('    Medication Type: ${treatment.medicationType}');
+            print('    Is Completed: ${treatment.isCompleted}');
+            print('    Is Skipped: ${treatment.isSkipped}');
+            print('    Icon: ${treatment.icon}');
+            print('    Last Action Time: ${treatment.lastActionTime}');
+          }
+        }
+
         // Step 6: Return the list of TreatmentTimelines
         return timelineMap.values.toList();
 
@@ -197,7 +220,7 @@ class TreatmentController {
         await db.connection!.query(
           """
           UPDATE TREATMENT
-          SET last_treatment_at = NOW(),
+          SET last_treatment_at = NOW()
           WHERE treatment_id = @treatmentId
           """,
           substitutionValues: {
@@ -216,7 +239,7 @@ class TreatmentController {
     }
   }
 
-  Future<bool> logTreatment(int userId, int treatmentLogId, int treatmentId, DateTime date, String status) async {
+  Future<bool> logTreatment(int userId, int treatmentId, DateTime date, String status) async {
     if (db.isConnected) {
       try {
         final conn = db.connection!;
