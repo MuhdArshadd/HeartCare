@@ -1,0 +1,94 @@
+import 'package:flutter/material.dart';
+import 'package:heartcare/model/treatment_model.dart';
+import 'package:heartcare/view/popup_screen/treatment_delete_popup.dart';
+
+class TreatmentTaskCard extends StatelessWidget {
+  final int timelineId;
+  final TreatmentTask task;
+  final void Function(int, int, {required bool markCompleted}) onToggleStatus;
+
+  const TreatmentTaskCard({
+    Key? key,
+    required this.timelineId,
+    required this.task,
+    required this.onToggleStatus,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+      return GestureDetector(
+            onLongPress: () => showDeleteTreatmentPopup(context: context, task: task),
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(10),
+            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(task.icon, color: Colors.blueGrey), // Use any color you like
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      task.name,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+              if (task.dosage != null && task.unit != null && task.sessionCount != null && task.medicationType != null)
+                Text('${task.dosage} ${task.unit}, ${task.sessionCount} ${task.medicationType}', style: const TextStyle(color: Colors.grey)),
+              if (task.notes != null && task.notes != '')
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text('Notes: ${task.notes}', style: const TextStyle(fontSize: 13)),
+                ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    icon: Icon(task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked),
+                    label: Text(task.isCompleted ? 'Completed' : 'Mark Complete'),
+                    onPressed: () => onToggleStatus(timelineId, task.id, markCompleted: true),
+                  ),
+                  TextButton.icon(
+                    icon: Icon(task.isSkipped ? Icons.cancel : Icons.remove_circle_outline),
+                    label: Text(task.isSkipped ? 'Skipped' : 'Skip'),
+                    onPressed: () => onToggleStatus(timelineId, task.id,  markCompleted: false),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+  }
+}
+
+class NoTreatmentCard extends StatelessWidget {
+  const NoTreatmentCard({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+      return Container(
+        width: double.infinity,
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Text(
+          'No treatment for this timeline',
+          style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.black54),
+        ),
+      );
+  }
+}

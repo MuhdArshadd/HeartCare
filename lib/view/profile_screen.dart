@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:heartcare/controller/user_controller.dart';
 import 'package:heartcare/model/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'login_screen.dart';
@@ -11,6 +12,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final UserController userController = UserController();
   int _selectedSection = 0;
   bool _isLoading = false; // To control loading state
 
@@ -125,6 +127,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   // Clear user data (provider)
                   Provider.of<UserProvider>(context, listen: false).clearUser();
+
+                  // Clear shared preferences data
+                  await userController.clearLoginInfo();
 
                   // Close the loading dialog
                   Navigator.of(context).pop();

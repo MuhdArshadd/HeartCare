@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:heartcare/model/user_model.dart';
-import 'package:heartcare/view/homepage_screen.dart';
 import 'package:heartcare/view/resetpassword_screen.dart';
 import 'package:heartcare/view/signup_screen.dart';
 import 'package:provider/provider.dart';
@@ -23,6 +22,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final UserController userController = UserController();
 
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedLoginInfo();
+  }
+
+  Future<void> _loadSavedLoginInfo() async {
+    final loginInfo = await userController.getLoginInfo();
+    setState(() {
+      _usernameController.text = loginInfo['username'] ?? '';
+      _passwordController.text = loginInfo['password'] ?? '';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -143,8 +155,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (_formKey.currentState!.validate()) {
                             String username = _usernameController.text;
                             String password = _passwordController.text;
+                            String hashedPassword = userController.hashPassword(password);
 
-                            UserModel? user = await userController.userLogin(username, password);
+                            UserModel? user = await userController.userLogin(username, hashedPassword);
 
                             print('DEBUG: Logged in user ->');
                             print('user ID: ${user?.userID}');
@@ -166,6 +179,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (user != null) {
                               // Save to global state
                               Provider.of<UserProvider>(context, listen: false).setUser(user);
+
+                              // Save login info to shared preferences
+                              await userController.saveLoginInfo(username, password);
 
                               // Navigate to the next screen
                               Navigator.push(

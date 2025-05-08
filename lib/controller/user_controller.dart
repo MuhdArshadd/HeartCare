@@ -1,7 +1,9 @@
 import 'dart:typed_data';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../database_service.dart';
 import 'dart:convert';
-import '../model/user_model.dart'; // For base64 encoding
+import '../model/user_model.dart';
+import 'package:crypto/crypto.dart';
 
 class UserController {
   final db = DatabaseConnection();
@@ -452,6 +454,32 @@ class UserController {
     return healthReadings;
   }
 
+  Future<void> saveLoginInfo(String username, String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('username', username);
+    await prefs.setString('password', password);
+  }
+
+  Future<Map<String, String?>> getLoginInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    return {
+      'username': prefs.getString('username'),
+      'password': prefs.getString('password'),
+    };
+  }
+
+  Future<void> clearLoginInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('username');
+    await prefs.remove('password');
+  }
+
+
+  String hashPassword(String password) {
+    final bytes = utf8.encode(password);
+    final hash = sha256.convert(bytes);
+    return hash.toString();
+  }
 
   bool hasMissingUserData(UserModel user) {
     final fieldsToCheck = [

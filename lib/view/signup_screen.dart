@@ -238,7 +238,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             String fullname = _fullnameController.text;
                             String username = _usernameController.text;
                             String emailAddress = _emailController.text;
-                            String password = _passwordController.text;
+                            String hashedPassword = userController.hashPassword(_passwordController.text);
 
                             // Create user model
                             UserModel newUser = UserModel(
@@ -246,7 +246,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               username: username,
                               fullname: fullname,
                               emailAddress: emailAddress,
-                              password: password,
+                              password: hashedPassword,
                               age: null,
                               sex: null,
                               bodyWeight: null,

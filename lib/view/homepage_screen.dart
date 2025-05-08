@@ -6,9 +6,13 @@ import 'package:heartcare/view/popup_screen/bloodsugar_reading_popup.dart';
 import 'package:heartcare/view/popup_screen/bmi_reading_popup.dart';
 import 'package:heartcare/view/popup_screen/cholesterol_reading_popup.dart';
 import 'package:heartcare/view/popup_screen/complete_profile_popup.dart';
+import 'package:heartcare/view/treatment_screen.dart';
+import 'package:heartcare/view/treatment_timeline_section.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../controller/treatment_controller.dart';
 import '../model/provider/user_provider.dart';
+import '../model/treatment_model.dart';
 import 'app_bar/main_navigation.dart';
 import 'diagnose_cvd_screen.dart';
 
@@ -20,15 +24,24 @@ class HomepageScreen extends StatefulWidget {
 }
 
 class _HomepageScreenState extends State<HomepageScreen>{
+  final TreatmentController treatmentController = TreatmentController();
   final UserController userController = UserController();
   bool popupShown = false;
   DateTime currentDate = DateTime.now();
   bool _isLoading = false;
 
+  bool _isButtonDisabled = false;
+  List<TreatmentTimeline> _todaysTreatments = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTreatmentData();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
 
     // Show profile completion popup if necessary
     if (!popupShown) {
@@ -55,12 +68,34 @@ class _HomepageScreenState extends State<HomepageScreen>{
     await Future.wait([
       _fetchRiskData(),
       _fetchHealthReadings(),
+      _fetchTreatmentData(),
     ]);
 
     if (mounted) {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _fetchTreatmentData() async {
+    try {
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      if (user == null) throw Exception('User not found');
+      final treatments = await treatmentController.getTreatment("Homepage", user.userID, currentDate);
+
+      if (mounted) {
+        setState(() {
+          _todaysTreatments = treatments;
+        });
+      }
+    } catch (e) {
+      // Handle error
+      if (mounted) {
+        setState(() {
+          _todaysTreatments = [];
+        });
+      }
     }
   }
 
@@ -74,6 +109,71 @@ class _HomepageScreenState extends State<HomepageScreen>{
     final user = Provider.of<UserProvider>(context, listen: false).user;
     if (user == null) throw Exception('User not found');
     return await userController.fetchHealthReadings(user.userID);
+  }
+
+  void _onToggleStatus(int timelineId, int taskId, {required bool markCompleted}) async {
+    if (_isButtonDisabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Hold on! Please wait a moment before pressing again."),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isButtonDisabled = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      setState(() => _isButtonDisabled = false);
+    });
+
+    final timeline = _todaysTreatments.firstWhere((t) => t.id == timelineId);
+    final task = timeline.treatments.firstWhere((t) => t.id == taskId);
+
+    if (markCompleted) {
+      if (task.isCompleted) {
+        task.isCompleted = false;
+      } else {
+        task.isCompleted = true;
+        task.isSkipped = false;
+      }
+      await _handleAction(task.id, task.isCompleted ? 'Completed' : 'Pending', currentDate);
+    } else {
+      if (task.isSkipped) {
+        task.isSkipped = false;
+      } else {
+        task.isSkipped = true;
+        task.isCompleted = false;
+      }
+      await _handleAction(task.id, task.isSkipped ? 'Skipped' : 'Pending', currentDate);
+    }
+    task.lastActionTime = DateTime.now();
+  }
+
+  Future<void> _handleAction(int treatmentId, String status, DateTime date) async {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    bool success = await treatmentController.logTreatment(user!.userID, treatmentId, date, status);
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Treatment marked as $status."),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Failed to update treatment. Try again later."),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   @override
@@ -130,7 +230,6 @@ class _HomepageScreenState extends State<HomepageScreen>{
                   return const Text('No data available');
                 },
               ),
-
               const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
@@ -161,9 +260,34 @@ class _HomepageScreenState extends State<HomepageScreen>{
               const SizedBox(height: 16),
               const Text("Upcoming Treatments:", style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              _buildCard(child: const Text("You have not log any symptoms.")),
-
-              const SizedBox(height: 16),
+              TreatmentTimelineSection(
+                timelines: _todaysTreatments,
+                onToggleStatus: _onToggleStatus,
+              ),
+              Container(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const MainNavigationScreen(selectedIndex: 1)),
+                    );
+                  },
+                  icon: const Icon(Icons.arrow_forward, size: 16),
+                  label: const Text(
+                    "See All Treatments",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
               const Text("Update Your Health Readings:", style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               FutureBuilder<List<Map<String, dynamic>>>(
@@ -340,4 +464,5 @@ class _HomepageScreenState extends State<HomepageScreen>{
   String _formatDate(DateTime date) {
     return "${DateFormat('EEEE').format(currentDate)}, ${date.day}/${date.month}/${date.year}";
   }
+
 }

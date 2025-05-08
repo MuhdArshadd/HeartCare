@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import '../database_service.dart';
 import '../model/treatment_model.dart';
 
@@ -73,14 +72,18 @@ class TreatmentController {
     return false;
   }
 
-  Future<List<TreatmentTimeline>> getTreatment(int userId, DateTime treatmentDate) async {
+  Future<List<TreatmentTimeline>> getTreatment(String page, int userId, DateTime treatmentDate) async {
     if (db.isConnected) {
       try {
         final conn = db.connection!;
+        List<List<dynamic>> result = [];
+        int treatmentTimeID = getTimelineIdFromHour(treatmentDate.hour);
+        print (treatmentTimeID);
 
-        // Step 1: Get all active treatments for the user
-        final result = await conn.query(
-          """
+        // Step 1: Get all active treatments for the user based on page
+        if (page == "Treatment"){
+          result = await conn.query(
+            """
         SELECT t.treatment_id, t.category, t.treatment_name, t.notes, t.treatment_times_id, 
                tms.dosage_per_intake, tms.unit_of_dosage, tms.quantity_per_session, tms.medication_type
         FROM treatment t
@@ -91,12 +94,33 @@ class TreatmentController {
         AND (t.last_treatment_at IS NULL OR @date <= t.last_treatment_at)
         ORDER BY t.treatment_times_id ASC
         """,
-          substitutionValues: {
-            'userId': userId,
-            'date': DateFormat('yyyy-MM-dd').format(treatmentDate),
-          },
-        );
-
+            substitutionValues: {
+              'userId': userId,
+              'date': DateFormat('yyyy-MM-dd').format(treatmentDate),
+            },
+          );
+        } else if (page == "Homepage"){
+          result = await conn.query(
+            """
+        SELECT t.treatment_id, t.category, t.treatment_name, t.notes, t.treatment_times_id, 
+               tms.dosage_per_intake, tms.unit_of_dosage, tms.quantity_per_session, tms.medication_type
+        FROM treatment t
+        LEFT JOIN treatment_medication_supplement tms 
+        ON t.treatment_id = tms.treatment_id
+        WHERE t.user_id = @userId 
+        AND t.created_at <= @date
+        AND (t.last_treatment_at IS NULL OR @date <= t.last_treatment_at)
+        AND t.treatment_times_id = @timelineId
+        ORDER BY t.treatment_times_id ASC
+        LIMIT 2
+        """,
+            substitutionValues: {
+              'userId': userId,
+              'date': DateFormat('yyyy-MM-dd').format(treatmentDate),
+              'timelineId': treatmentTimeID
+            },
+          );
+        }
         // Step 2: Organize the treatments by their timeline ID (e.g., Morning, Afternoon, etc.)
         Map<int, TreatmentTimeline> timelineMap = {};
 
@@ -340,6 +364,18 @@ String getTimeRange(int treatmentTimesId) {
       return '9:00 PM – 5:59 AM';
     default:
       return 'Unknown';
+  }
+}
+
+int getTimelineIdFromHour(int hour) {
+  if (hour >= 6 && hour < 12) {
+    return 1; // Morning
+  } else if (hour >= 12 && hour < 18) {
+    return 2; // Afternoon
+  } else if (hour >= 18 && hour < 21) {
+    return 3; // Evening
+  } else {
+    return 4; // Night
   }
 }
 
