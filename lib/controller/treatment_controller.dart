@@ -322,6 +322,33 @@ class TreatmentController {
     }
   }
 
+  Future<List<int>> getTreatmentTimelineID(int userID) async {
+    if (db.isConnected) {
+      try {
+        final results = await db.connection!.query(
+          """
+        SELECT DISTINCT treatment_times_id
+        FROM TREATMENT
+        WHERE user_id = @userid
+          AND created_at <= NOW()
+          AND (last_treatment_at IS NULL OR NOW() <= last_treatment_at)
+        """,
+          substitutionValues: {
+            'userid': userID,
+          },
+        );
+
+        return results.map((row) => row[0] as int).toList();
+      } catch (error) {
+        print(error);
+        return [];
+      }
+    } else {
+      return [];
+    }
+  }
+
+
   int getTimeSlotId(String timeOfDay) {
     if (timeOfDay.contains('Morning')) {
       return 1;

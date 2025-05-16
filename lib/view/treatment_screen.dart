@@ -3,6 +3,7 @@ import 'package:heartcare/controller/treatment_controller.dart';
 import 'package:heartcare/view/app_bar/appbar.dart';
 import 'package:heartcare/view/treatment_timeline_section.dart';
 import 'package:provider/provider.dart';
+import '../controller/notification_service.dart';
 import '../model/provider/user_provider.dart';
 import '../model/treatment_model.dart';
 
@@ -15,6 +16,7 @@ class TreatmentPage extends StatefulWidget {
 
 class _TreatmentPageState extends State<TreatmentPage> {
   final TreatmentController treatmentController = TreatmentController();
+  final NotificationService notificationService = NotificationService();
 
   DateTime _selectedDate = DateTime.now();
   double _dailyProgress = 0.0;
@@ -28,6 +30,7 @@ class _TreatmentPageState extends State<TreatmentPage> {
   void initState() {
     super.initState();
     _loadTreatmentData();
+    _initNotification();
   }
 
   Future<void> _selectDate() async {
@@ -43,6 +46,68 @@ class _TreatmentPageState extends State<TreatmentPage> {
         _selectedDate = picked;
         _loadTreatmentData();
       });
+    }
+  }
+
+  Future<void> _initNotification() async {
+    try {
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      await Future.delayed(const Duration(milliseconds: 500));
+      final fetched = await treatmentController.getTreatmentTimelineID(user!.userID);
+
+      final List<int> allTimelines = [1, 2, 3, 4];
+
+      if (fetched.isEmpty) {
+        for (final id in allTimelines) {
+          await NotificationService().cancelTreatmentNotification(id);
+        }
+      } else {
+        for (final id in allTimelines) {
+          if (fetched.contains(id)) {
+            if (id == 1){
+              await NotificationService().scheduleNotification(
+                id: id,
+                title: "It's Time For Your Treatment!",
+                body: "Start your day right — take your morning treatment.",
+                hour: 6,
+                minute: 0,
+                payload: "morning_treatment",
+              );
+            } else if (id == 2){
+              await NotificationService().scheduleNotification(
+                id: id,
+                title: "It's Time For Your Treatment!",
+                body: "Time for your midday treatment.",
+                hour: 12,
+                minute: 0,
+                payload: "afternoon_treatment",
+              );
+            } else if (id == 3){
+              await NotificationService().scheduleNotification(
+                id: id,
+                title: "It's Time For Your Treatment!",
+                body: "Stay on track with your evening treatment.",
+                hour: 18,
+                minute: 0,
+                payload: "evening_treatment",
+              );
+            } else if (id == 4){
+              await NotificationService().scheduleNotification(
+                id: id,
+                title: "It's Time For Your Treatment!",
+                body: "End the day well — take your night treatment.",
+                hour: 21,
+                minute: 0,
+                payload: "night_treatment",
+              );
+            }
+          } else {
+            await NotificationService().cancelTreatmentNotification(id);
+          }
+        }
+      }
+    } catch (error) {
+      print("Notification initialization error: $error");
     }
   }
 

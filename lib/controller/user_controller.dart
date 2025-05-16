@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../database_service.dart';
 import 'dart:convert';
 import '../model/user_model.dart';
@@ -12,7 +11,7 @@ class UserController {
     if (db.isConnected) {
       try {
         // Convert image bytes to base64 string if the profile image exists
-        if (user.profileImage != null) {
+        if (user.profileImage != null && user.profileImage!.isNotEmpty) {
           final base64Image = base64Encode(user.profileImage!);
 
           await db.connection!.query(
@@ -147,7 +146,7 @@ class UserController {
     }
   }
 
-  Future<UserModel?> userLogin(String username, String password) async {
+  Future<UserModel?> userLogin(String username, String password, String hashPassword) async {
     if (db.isConnected) {
       try {
         final results = await db.connection!.query(
@@ -157,7 +156,7 @@ class UserController {
         ''',
           substitutionValues: {
             'username': username,
-            'password': password,
+            'password': hashPassword,
           },
         );
 
@@ -171,7 +170,7 @@ class UserController {
             'username': row[1] as String,
             'fullname': row[2] as String,
             'email_address': row[3] as String,
-            'password': row[4] as String,
+            'password': password,
             'age': row[5] as int?,
             'sex': row[6] as String?,
             'body_weight': row[7] as double?,
@@ -453,27 +452,6 @@ class UserController {
     }
     return healthReadings;
   }
-
-  Future<void> saveLoginInfo(String username, String password) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('username', username);
-    await prefs.setString('password', password);
-  }
-
-  Future<Map<String, String?>> getLoginInfo() async {
-    final prefs = await SharedPreferences.getInstance();
-    return {
-      'username': prefs.getString('username'),
-      'password': prefs.getString('password'),
-    };
-  }
-
-  Future<void> clearLoginInfo() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('username');
-    await prefs.remove('password');
-  }
-
 
   String hashPassword(String password) {
     final bytes = utf8.encode(password);

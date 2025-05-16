@@ -3,6 +3,7 @@ import 'package:heartcare/model/user_model.dart';
 import 'package:heartcare/view/resetpassword_screen.dart';
 import 'package:heartcare/view/signup_screen.dart';
 import 'package:provider/provider.dart';
+import '../controller/notification_service.dart';
 import '../controller/user_controller.dart';
 import '../model/provider/user_provider.dart';
 import 'app_bar/main_navigation.dart';
@@ -25,15 +26,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSavedLoginInfo();
-  }
-
-  Future<void> _loadSavedLoginInfo() async {
-    final loginInfo = await userController.getLoginInfo();
-    setState(() {
-      _usernameController.text = loginInfo['username'] ?? '';
-      _passwordController.text = loginInfo['password'] ?? '';
-    });
   }
 
   @override
@@ -157,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             String password = _passwordController.text;
                             String hashedPassword = userController.hashPassword(password);
 
-                            UserModel? user = await userController.userLogin(username, hashedPassword);
+                            UserModel? user = await userController.userLogin(username, password, hashedPassword);
 
                             print('DEBUG: Logged in user ->');
                             print('user ID: ${user?.userID}');
@@ -174,14 +166,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             print('Marital Status: ${user?.maritalStatus}');
                             print('Employment Status: ${user?.employmentStatus}');
                             print('Education Level: ${user?.educationLevel}');
-                            print('Profile Image: ${user?.profileImage != null ? 'Available' : 'Null'}');
+                            print('Profile Image: ${user?.profileImage != null && user!.profileImage!.isNotEmpty ? 'Available' : 'Null'}');
 
                             if (user != null) {
-                              // Save to global state
+                              // Save to global state and shared preferences
                               Provider.of<UserProvider>(context, listen: false).setUser(user);
-
-                              // Save login info to shared preferences
-                              await userController.saveLoginInfo(username, password);
 
                               // Navigate to the next screen
                               Navigator.push(

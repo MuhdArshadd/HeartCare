@@ -24,36 +24,36 @@ class UserModel {
     required this.fullname,
     required this.emailAddress,
     required this.password,
-    required this.age,
-    required this.sex,
-    required this.bodyWeight,
-    required this.height,
-    required this.familyHistoryCvd,
-    required this.ethnicityGroup,
-    required this.maritalStatus,
-    required this.employmentStatus,
-    required this.educationLevel,
-    required this.profileImage,
+    this.age,
+    this.sex,
+    this.bodyWeight,
+    this.height,
+    this.familyHistoryCvd,
+    this.ethnicityGroup,
+    this.maritalStatus,
+    this.employmentStatus,
+    this.educationLevel,
+    this.profileImage,
   });
 
   // Convert the UserModel to a Map for database insertion
   Map<String, dynamic> toMap() {
     return {
-      'userid': userID,
+      'user_id': userID,
       'username': username,
       'fullname': fullname,
       'email_address': emailAddress,
       'password': password,
-      'age': age!,
-      'sex': sex!,
-      'body_weight': bodyWeight!,
-      'height': height!,
-      'family_history_cvd': familyHistoryCvd!,
-      'ethnicity_group': ethnicityGroup!,
-      'marital_status': maritalStatus!,
-      'employment_status': employmentStatus!,
-      'education_level': educationLevel!,
-      'profile_image': profileImage!,
+      'age': age,
+      'sex': sex,
+      'body_weight': bodyWeight,
+      'height': height,
+      'family_history_cvd': familyHistoryCvd,
+      'ethnicity_group': ethnicityGroup,
+      'marital_status': maritalStatus,
+      'employment_status': employmentStatus,
+      'education_level': educationLevel,
+      'profile_image': profileImage,
     };
   }
 
@@ -74,7 +74,7 @@ class UserModel {
       maritalStatus: map['marital_status'] ?? "N/A",
       employmentStatus: map['employment_status'] ?? "N/A",
       educationLevel: map['education_level'] ?? "N/A",
-      profileImage: map['profile_image'] ?? null
+      profileImage: map['profile_image'] != null ? Uint8List.fromList(List<int>.from(map['profile_image'])) : Uint8List(0),
     );
   }
 }

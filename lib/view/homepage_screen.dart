@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:heartcare/controller/notification_service.dart';
 import 'package:heartcare/controller/user_controller.dart';
 import 'package:heartcare/view/app_bar/appbar.dart';
 import 'package:heartcare/view/popup_screen/bloodpressure_reading_popup.dart';
@@ -6,7 +7,6 @@ import 'package:heartcare/view/popup_screen/bloodsugar_reading_popup.dart';
 import 'package:heartcare/view/popup_screen/bmi_reading_popup.dart';
 import 'package:heartcare/view/popup_screen/cholesterol_reading_popup.dart';
 import 'package:heartcare/view/popup_screen/complete_profile_popup.dart';
-import 'package:heartcare/view/treatment_screen.dart';
 import 'package:heartcare/view/treatment_timeline_section.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -26,6 +26,7 @@ class HomepageScreen extends StatefulWidget {
 class _HomepageScreenState extends State<HomepageScreen>{
   final TreatmentController treatmentController = TreatmentController();
   final UserController userController = UserController();
+  final NotificationService notificationService = NotificationService();
   bool popupShown = false;
   DateTime currentDate = DateTime.now();
   bool _isLoading = false;
@@ -37,6 +38,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
   void initState() {
     super.initState();
     _fetchTreatmentData();
+    _initNotification();
   }
 
   @override
@@ -76,6 +78,29 @@ class _HomepageScreenState extends State<HomepageScreen>{
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _initNotification () async {
+    // Schedule a daily notification to the user for general purpose
+    await NotificationService().scheduleNotification(
+      id: 5, // for general remainder in the morning
+      title: "Don't Forget Your Health!",
+      body: "Track your symptoms, record treatments, and keep your heart health in check.",
+      hour: 9, // in 24 hour format (9.00AM)
+      minute: 00,
+      payload: "general_morning_remainder",
+    );
+
+    // Schedule a daily notification to the user for general purpose
+    await NotificationService().scheduleNotification(
+      id: 6, // general remainder in the night
+      title: "It's Time To Update Your Health!",
+      body: "Track your symptoms, record treatments, and keep your heart health in check.",
+      hour: 21, // in 24 hour format (9.00PM)
+      minute: 00,
+      payload: "general_night_remainder",
+    );
+
   }
 
   Future<void> _fetchTreatmentData() async {

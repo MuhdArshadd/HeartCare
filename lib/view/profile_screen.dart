@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:heartcare/controller/user_controller.dart';
 import 'package:heartcare/model/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'login_screen.dart';
@@ -12,7 +11,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final UserController userController = UserController();
   int _selectedSection = 0;
   bool _isLoading = false; // To control loading state
 
@@ -66,12 +64,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   CircleAvatar(
                     radius: 60,
-                    backgroundImage: user.profileImage != null
-                        ? MemoryImage(user.profileImage!)
-                        : null,
-                    child: user.profileImage == null
-                        ? const Icon(Icons.person, size: 60)
-                        : null,
+                    backgroundImage: (user.profileImage != null && user.profileImage!.isNotEmpty) ? MemoryImage(user.profileImage!) : null,
+                    child: (user.profileImage == null || user.profileImage!.isEmpty) ? const Icon(Icons.person, size: 60) : null,
                   ),
                   IconButton(
                     icon: const Icon(Icons.edit, color: Colors.white),
@@ -125,19 +119,17 @@ class _ProfilePageState extends State<ProfilePage> {
                   // Show a loading indicator before navigating
                   await Future.delayed(const Duration(seconds: 2));
 
-                  // Clear user data (provider)
+                  // Clear user data (provider) and shared preferences
                   Provider.of<UserProvider>(context, listen: false).clearUser();
-
-                  // Clear shared preferences data
-                  await userController.clearLoginInfo();
 
                   // Close the loading dialog
                   Navigator.of(context).pop();
 
                   // Navigate to Login Page and replace the current route
-                  Navigator.pushReplacement(
+                  Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    (route) => false,
                   );
                 },
                 style: ElevatedButton.styleFrom(
