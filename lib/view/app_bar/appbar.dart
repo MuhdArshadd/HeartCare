@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../profile_screen.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBar({super.key});
@@ -21,13 +20,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               height: 40,
             ),
           ),
-          IconButton(
-            padding: const EdgeInsets.only(right: 20),
-            icon: const Icon(Icons.notifications, color: Colors.black, size: 40),
-            onPressed: () {
-
-            },
-          ),
+          // IconButton(
+          //   padding: const EdgeInsets.only(right: 20),
+          //   icon: const Icon(Icons.notifications, color: Colors.black, size: 40),
+          //   onPressed: () {
+          //
+          //   },
+          // ),
         ],
       ),
     );

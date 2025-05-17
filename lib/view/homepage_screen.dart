@@ -14,6 +14,7 @@ import '../controller/treatment_controller.dart';
 import '../model/provider/user_provider.dart';
 import '../model/treatment_model.dart';
 import 'app_bar/main_navigation.dart';
+import 'chatbot_screen.dart';
 import 'diagnose_cvd_screen.dart';
 
 class HomepageScreen extends StatefulWidget {
@@ -365,6 +366,46 @@ class _HomepageScreenState extends State<HomepageScreen>{
                 child: const Text(
                   "Did you know that walking just 30 minutes a day (about 2–3 km) can reduce your risk of heart disease by up to 30%?",
                   style: TextStyle(fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, fontSize: 15),
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Chat with HeartCare Chatbot",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Have questions about your heart health? Our AI assistant is here to help.",
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.chat_bubble_outline),
+                        label: const Text(
+                          "Start Chat",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          shape: const StadiumBorder(),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ChatbotPage()),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 20),

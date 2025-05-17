@@ -13,8 +13,6 @@ class DatabaseConnection {
       return true; // Already connected
     }
 
-    await dotenv.load();  // Ensure .env is loaded
-
     String host = dotenv.get('DB_HOST');
     int port = int.parse(dotenv.get('DB_PORT'));
     String dbName = dotenv.get('DB_NAME');
