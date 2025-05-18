@@ -15,6 +15,7 @@ class AddTreatmentPage extends StatefulWidget {
 
 class _AddTreatmentPageState extends State<AddTreatmentPage> {
   final TreatmentController treatmentController = TreatmentController();
+  final ScrollController _scrollController = ScrollController();
 
   int _selectedCategoryIndex = 0;
   final List<String> _categories = ['Medication', 'Supplement', 'Diet', 'Physical Activity'];
@@ -49,6 +50,8 @@ class _AddTreatmentPageState extends State<AddTreatmentPage> {
     _quantityController.dispose();
     _treatmentDescription.dispose();
     _dietNameController.dispose();
+    _scrollController.dispose();
+
     super.dispose();
   }
 
@@ -57,7 +60,9 @@ class _AddTreatmentPageState extends State<AddTreatmentPage> {
     final user = Provider.of<UserProvider>(context).user;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const Text('Add Treatment'),
         elevation: 0,
         leading: IconButton(
@@ -92,7 +97,7 @@ class _AddTreatmentPageState extends State<AddTreatmentPage> {
               ),
               child: const Text(
                 'Add Treatment',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
           ],
@@ -114,77 +119,88 @@ class _AddTreatmentPageState extends State<AddTreatmentPage> {
   Widget _buildCategorySelector() {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
-      height: 100,  // Increased height for better visual
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _categories.length,
-        itemBuilder: (context, index) {
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedCategoryIndex = index;
-              });
+      height: 110, // Slightly increased to account for scrollbar padding
+      child: Scrollbar(
+        thumbVisibility: true,
+        trackVisibility: true,
+        interactive: true,
+        controller: _scrollController,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 12), // Space between cards and scrollbar
+          child: ListView.builder(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: _categories.length,
+            itemBuilder: (context, index) {
+              final isSelected = _selectedCategoryIndex == index;
+
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedCategoryIndex = index;
+                  });
+                },
+                child: Container(
+                  width: 100,
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.blue.shade700 : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: isSelected
+                        ? [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      )
+                    ]
+                        : null,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Colors.white.withOpacity(0.2)
+                              : Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          _categoryIcons[index],
+                          size: 20,
+                          color: isSelected ? Colors.white : Colors.blue.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _categories[index],
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? Colors.white
+                              : Colors.grey.shade800,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              );
             },
-            child: Container(
-              width: 100,  // Fixed width for consistent sizing
-              margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(
-                color: _selectedCategoryIndex == index
-                    ? Colors.blue.shade700
-                    : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: _selectedCategoryIndex == index
-                    ? [
-                  BoxShadow(
-                    color: Colors.blue.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  )
-                ]
-                    : null,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: _selectedCategoryIndex == index
-                          ? Colors.white.withOpacity(0.2)
-                          : Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      _categoryIcons[index],
-                      size: 20,
-                      color: _selectedCategoryIndex == index
-                          ? Colors.white
-                          : Colors.blue.shade700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _categories[index],
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: _selectedCategoryIndex == index
-                          ? Colors.white
-                          : Colors.grey.shade800,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildMedicationSupplementForm() {
     return Card(
+      color: Colors.grey[100],
       elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -297,6 +313,7 @@ class _AddTreatmentPageState extends State<AddTreatmentPage> {
 
   Widget _buildDietActivityForm() {
     return Card(
+      color: Colors.grey[100],
       elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -337,6 +354,7 @@ class _AddTreatmentPageState extends State<AddTreatmentPage> {
 
   Widget _buildTimeSelection() {
     return Card(
+      color: Colors.grey[100],
       elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),

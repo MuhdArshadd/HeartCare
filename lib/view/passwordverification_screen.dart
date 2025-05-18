@@ -65,9 +65,10 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Verification successful!')),
       );
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (Route<dynamic> route) => false, // removes all previous routes
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

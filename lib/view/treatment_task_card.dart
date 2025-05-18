@@ -31,7 +31,7 @@ class TreatmentTaskCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(task.icon, color: Colors.blueGrey), // Use any color you like
+                  Icon(task.icon, color: _getCategoryIconColor(task.icon)), // Use any color you like
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -68,6 +68,22 @@ class TreatmentTaskCard extends StatelessWidget {
           ),
         ),
       );
+  }
+}
+
+Color _getCategoryIconColor(IconData icon) {
+  if (icon == Icons.medication) {       // Medication
+    return Colors.red[600]!;  // Red for urgency/medical
+  } else if (icon == Icons.local_pharmacy) { // Supplement
+    return Colors.blue[600]!;  // Blue for pharmacy/chemical
+  } else if (icon == Icons.restaurant) { // Diet
+    return Colors.green[600]!;  // Green for healthy food
+  } else if (icon == Icons.directions_run) { // Physical Activity
+    return Colors.orange[600]!;  // Orange for energy/activity
+  } else if (icon == Icons.help_outline) { // Default/Unknown
+    return Colors.grey[600]!;
+  } else {
+    return Colors.purple; // Fallback color
   }
 }
 

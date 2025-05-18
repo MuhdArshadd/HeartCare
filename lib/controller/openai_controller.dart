@@ -1,10 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:heartcare/controller/treatment_controller.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../database_service.dart';
+import '../model/treatment_model.dart';
 
 class OpenAIService {
+  final db = DatabaseConnection();
   final String openaiApiKey = dotenv.env['OPENAI_KEY'] ?? '';
+  final TreatmentController treatmentController = TreatmentController();
+  DateTime _currentDate = DateTime.now();
+
 
   OpenAIService() {
     if (openaiApiKey.isEmpty) {
@@ -184,5 +191,148 @@ class OpenAIService {
       return 'Error in fetching response from OpenAI.';
     }
   }
+
+  Future<String> getAITreatment(int userID, Map<String, Map<String, String>> cvdPresences, Map<String, String> activeSymptoms, String detectionValue) async {
+    if (db.isConnected) {
+      try {
+        // 1. Get current treatments
+        final timelines = await treatmentController.getTreatment("Treatment", userID, _currentDate);
+
+        // 2. Convert each data into a String text for Prompting
+        String treatmentList = await readableTreatmentList(timelines); // Format user treatment into readable string
+        String cvdPresencesList = await readableCVDPresencesList(cvdPresences); // Format cvdPresences into readable string
+        String activeSymptomsList = await readableSymptomsList(activeSymptoms); // Format activeSymptoms into readable string
+        String cvdLevelDetection = await readableCVDDetectionLevel(detectionValue); // Format CVD Risk level detection into a readable string
+
+        // 3. Define the prompt
+        String prompt = """
+        You are an AI healthcare assistant specialized in cardiovascular disease (CVD) management.
+        
+        Your task is to generate **personalized treatment recommendations** for a patient based on the following context. The treatments can be of four types only: **Medication, Supplement, Diet, or Physical Activity**.
+        
+        ### FORMAT:
+        All outputs must strictly follow the **JSON format** shown below. Do not include any explanations or text outside the JSON.
+        
+        $treatmentSchema
+        
+        ### CONTEXT (to analyze in the following order):
+        1. **Current Treatment Plan** — Avoid suggesting duplicate or redundant treatments. Do not recommend treatments that conflict with the user’s existing treatment regimen.
+        $treatmentList
+        
+        2. **CVD Risk Factors** — Understand what specific cardiovascular risks (e.g., hypertension, diabetes) are present. This should inform the choice of treatment.
+        $cvdPresencesList
+        
+        3. **Active Symptoms** — Suggest treatments that may help manage or reduce these symptoms, if medically appropriate.
+        $activeSymptomsList
+        
+        4. **CVD Risk Score** — Risk status indicating the user's current cardiovascular risk level.
+        $cvdLevelDetection
+        
+        ### INSTRUCTIONS:
+        - Tailor the treatment suggestions **based on the combination of context above**.
+        - Suggest **0, 1, or more treatments per time of day** (Morning, Afternoon, Evening, Night) as needed.
+        - You do NOT need to fill all time slots — only suggest treatments when necessary or beneficial.
+        - Use **realistic dosages, units, and scheduling** based on standard practices.
+        - Only return valid JSON.
+        """;
+
+        // 4. Send request to OpenAI
+        final response = await http.post(
+          Uri.parse('https://api.openai.com/v1/chat/completions'),
+          headers: {
+            HttpHeaders.contentTypeHeader: 'application/json',
+            HttpHeaders.authorizationHeader: 'Bearer $openaiApiKey',
+          },
+          body: json.encode({
+            'model': 'gpt-4o-mini-2024-07-18',
+            'messages': [{'role': 'system', 'content': prompt}],
+            'temperature': 0.0, // Reduce randomness to ensure consistent recommendations
+          }),
+        );
+
+        // 5. Handle and return the response
+        if (response.statusCode == 200) {
+          final responseBody = json.decode(response.body);
+          return responseBody['choices'][0]['message']['content'];
+        } else {
+          return 'Error in fetching response from OpenAI.';
+        }
+      } catch (e) {
+        print('Exception in getAITreatment: $e');
+        return 'An unexpected error occurred: $e';
+      }
+    } else {
+      return 'Database is not connected.';
+    }
+  }
+
+  Future<String> readableTreatmentList (List<TreatmentTimeline> timelines) async {
+    String treatmentText = "";
+    if (timelines.isNotEmpty){
+      treatmentText = "User's current treatment Plan:\n";
+      for (var timeline in timelines) {
+        treatmentText += "\n${timeline.name} (${timeline.timeRange}):\n";
+
+        if (timeline.treatments.isEmpty) {
+          treatmentText += "- No treatments.\n";
+          continue;
+        }
+
+        for (var treatment in timeline.treatments) {
+          String medicationDetails = "";
+          if (treatment.treatmentCategory == "Medication" || treatment.treatmentCategory == "Supplement") {
+            medicationDetails =
+            " | Dosage: ${treatment.dosage ?? '-'} ${treatment.unit ?? ''}, "
+                "Sessions: ${treatment.sessionCount ?? '-'}, "
+                "Type: ${treatment.medicationType ?? '-'}";
+          }
+          treatmentText +=
+          "- ${treatment.name} (${treatment.treatmentCategory}) ${medicationDetails.isNotEmpty ? medicationDetails : ""}\n";
+
+          if ((treatment.notes ?? "").trim().isNotEmpty) {
+            treatmentText += "  Notes: ${treatment.notes}\n";
+          }
+        }
+      }
+    }
+    return treatmentText;
+  }
+
+  Future<String> readableCVDPresencesList (Map<String, Map<String, String>> cvdPresences) async {
+    String cvdPresenceText = "User's CVD Risk Factors:\n";
+    cvdPresences.forEach((riskName, details) {
+      String status = details['status'] ?? 'Unknown';
+      cvdPresenceText += "- $riskName: $status \n";
+    });
+
+    return cvdPresenceText;
+  }
+
+  Future<String> readableSymptomsList (Map<String, String> activeSymptoms) async {
+    String symptomText = "User's current active symptoms:\n";
+    activeSymptoms.forEach((symptomName, lastUpdated) {
+      symptomText += "- $symptomName\n";
+    });
+
+    return symptomText;
+  }
+
+  Future<String> readableCVDDetectionLevel (String detectionValue) async {
+    String cvdLevelText = "User's CVD Risk Score: $detectionValue\n";
+    return cvdLevelText;
+  }
+
+  String treatmentSchema = """ 
+  {
+    "category": "Must be one of: 'Medication', 'Supplement', 'Diet', or 'Physical Activity'.",
+    "name": "Name of the treatment (e.g., Atorvastatin, Morning Walk, Low-sodium diet)",
+    "dosage": "REQUIRED ONLY IF category is 'Medication' or 'Supplement'. Must be a numeric value (e.g., 10). MUST BE LEFT BLANK for 'Diet' or 'Physical Activity'.",
+    "unit": "REQUIRED ONLY IF category is 'Medication' or 'Supplement'. Must be one of: 'mg', 'ml', 'g', or 'IU'. MUST BE LEFT BLANK for 'Diet' or 'Physical Activity'.",
+    "quantity": "REQUIRED ONLY IF category is 'Medication' or 'Supplement'. Must be an integer (e.g., 1, 2, 3). MUST BE LEFT BLANK for 'Diet' or 'Physical Activity'.",
+    "type": "REQUIRED ONLY IF category is 'Medication' or 'Supplement'. Must be one of: 'Tablet', 'Capsule', 'Liquid', 'Injection'. MUST BE LEFT BLANK for 'Diet' or 'Physical Activity'.",
+    "description": "Really short explanation or purpose of the treatment",
+    "timesOfDay": ["List the exact times of day this treatment applies to. Allowed values: 'Morning', 'Afternoon', 'Evening', 'Night'. MUST be a non-empty array of valid values."]  
+  }
+  """;
 
 }

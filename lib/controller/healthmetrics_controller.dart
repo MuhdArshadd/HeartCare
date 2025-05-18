@@ -193,7 +193,7 @@ class HealthMetricsController {
       // High (Confirmed Diagnose as Hypercholesterolemia)
       return "High";
     } else {
-      return "Below Optimal Range (Possible Hypocholesterolemia)";
+      return "Hypocholesterolemia";
     }
   }
 

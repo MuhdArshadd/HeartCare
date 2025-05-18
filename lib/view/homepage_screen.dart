@@ -247,8 +247,33 @@ class _HomepageScreenState extends State<HomepageScreen>{
                           SizedBox(height: 8),
                           Center(child: Icon(_getIconForRiskLevel(riskLevel), size: 64, color: Colors.red)),
                           SizedBox(height: 20),
-                          Text("Risk Level: $riskLevel", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
-                          Text("Last Diagnose: $dateDiagnose"),
+                          RichText(
+                            text: TextSpan(
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 16,
+                                color: Colors.black, // default color for "Risk Level:"
+                              ),
+                              children: [
+                                TextSpan(text: "Risk Level: "),
+                                TextSpan(
+                                  text: riskLevel,
+                                  style: TextStyle(
+                                    color: riskLevel.toLowerCase() == "low risk"
+                                        ? Colors.green
+                                        : Colors.red,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            "Last Diagnose: $dateDiagnose",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -284,7 +309,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
                 ),
               ),
               const SizedBox(height: 16),
-              const Text("Upcoming Treatments:", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text("Upcoming Treatments:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               const SizedBox(height: 8),
               TreatmentTimelineSection(
                 timelines: _todaysTreatments,
@@ -294,7 +319,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
                   onPressed: () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => const MainNavigationScreen(selectedIndex: 1)),
                     );
@@ -314,7 +339,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
                 ),
               ),
               const SizedBox(height: 8),
-              const Text("Update Your Health Readings:", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text("Update Your Health Readings:", style: TextStyle(fontWeight: FontWeight.bold,  fontSize: 18)),
               const SizedBox(height: 8),
               FutureBuilder<List<Map<String, dynamic>>>(
                 future: _fetchHealthReadings(),
@@ -348,7 +373,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
               ),
 
               const SizedBox(height: 16),
-              const Text("Things to do:", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text("Things to do:", style: TextStyle(fontWeight: FontWeight.bold,  fontSize: 18)),
               const SizedBox(height: 8),
               _todoTile("Log Your Treatments", Icons.checklist_sharp),
               _todoTile("Log Your Symptoms", Icons.checklist_sharp),
@@ -358,14 +383,14 @@ class _HomepageScreenState extends State<HomepageScreen>{
                 children: const [
                   Icon(Icons.info, color: Colors.blue, size: 40),
                   SizedBox(width: 8),
-                  Text("Heart Health Tips:", style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text("Heart Health Tips:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 ],
               ),
               const SizedBox(height: 8),
               _buildCard(
                 child: const Text(
                   "Did you know that walking just 30 minutes a day (about 2–3 km) can reduce your risk of heart disease by up to 30%?",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, fontSize: 15),
+                  style: TextStyle(fontStyle: FontStyle.italic, fontSize: 15),
                 ),
               ),
               const SizedBox(height: 20),
@@ -440,32 +465,43 @@ class _HomepageScreenState extends State<HomepageScreen>{
   }
 
   Widget _healthReadingCard(String label, int userId, String healthStatus, String date) {
-    return SizedBox( // Constrain the height
-      height: 180, // Fixed height that works for your layout
+    return SizedBox(
+      height: 150, // Fixed height for all cards
       child: _buildCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-            const SizedBox(height: 4),
-            Expanded( // Use Expanded instead of Flexible
-              child: SingleChildScrollView( // Allow scrolling if content is too long
-                physics: const ClampingScrollPhysics(), // Disable overscroll effect
-                child: Text(
-                  healthStatus,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: Colors.blueAccent,
-                  ),
+            // Title section
+            Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+
+            // Health status section with fixed height
+            SizedBox(
+              height: 50, // Adjusted height to prevent overflow
+              child: Text(
+                healthStatus,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: _getHealthStatusColor(healthStatus),
                 ),
+                maxLines: 2, // Limit to 3 lines
+                overflow: TextOverflow.ellipsis, // Show ellipsis if text is too long
               ),
             ),
 
-            Text("Last Update: $date"),
-            const SizedBox(height: 8), // Replace Spacer with fixed gap
+            // Last update section
+            Text("Last Update: $date", style: TextStyle(fontSize: 11)),
+            const SizedBox(height: 10),
+
+            // Update button
             SizedBox(
-              height: 35,
+              height: 26,
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () async {
@@ -512,12 +548,12 @@ class _HomepageScreenState extends State<HomepageScreen>{
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: () {
           if (title == "Log Your Treatments") {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const MainNavigationScreen(selectedIndex: 1)),
             );
           } else if (title == "Log Your Symptoms") {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const MainNavigationScreen(selectedIndex: 2)),
             );
@@ -529,6 +565,71 @@ class _HomepageScreenState extends State<HomepageScreen>{
 
   String _formatDate(DateTime date) {
     return "${DateFormat('EEEE').format(currentDate)}, ${date.day}/${date.month}/${date.year}";
+  }
+
+  Color _getHealthStatusColor(String status) {
+    // Muted color palette
+    const Color mutedGreen = Color(0xFF4CAF50);
+    const Color mutedYellow = Color(0xFFFBC02D);
+    const Color mutedOrange = Color(0xFFF57C00);
+    const Color mutedRed = Color(0xFFD32F2F);
+    const Color mutedBlue = Color(0xFF1976D2);
+    const Color mutedLightBlue = Color(0xFF03A9F4);
+    const Color mutedGrey = Color(0xFF757575);
+
+    switch (status) {
+    // Blood Pressure
+      case "Normal BP":
+        return mutedGreen;
+      case "Elevated BP":
+        return const Color(0xFFCDDC39); // Muted lime
+      case "Stage 1 Hypertension":
+        return mutedOrange;
+      case "Stage 2 Hypertension":
+        return mutedRed;
+      case "Unclassified BP":
+        return mutedGrey;
+
+    // Blood Sugar
+      case "Normal":
+        return mutedGreen;
+      case "Prediabetes":
+        return mutedYellow;
+      case "Diabetes":
+        return mutedRed;
+      case "Unclassified":
+        return mutedGrey;
+
+    // Cholesterol
+      case "Optimal":
+        return mutedGreen;
+      case "Borderline High":
+        return mutedYellow;
+      case "High":
+        return mutedRed;
+      case "Hypocholesterolemia":
+        return mutedBlue;
+
+    // BMI
+      case "Underweight":
+        return mutedLightBlue;
+      case "Normal weight":
+        return mutedGreen;
+      case "Pre-obesity":
+        return mutedYellow;
+      case "Obesity Class I":
+        return mutedOrange;
+      case "Obesity Class II":
+        return const Color(0xFFE64A19); // Muted deep orange
+      case "Obesity Class III":
+        return mutedRed;
+      case "Invalid input":
+        return mutedGrey;
+
+    // Default
+      default:
+        return mutedGrey;
+    }
   }
 
 }

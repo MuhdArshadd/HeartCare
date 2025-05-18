@@ -88,11 +88,12 @@ class _SymptomPageState extends State<SymptomPage> {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
-                "Here you can track how your symptoms are progressing. Each graph shows how the severity of a symptom changed over time.",
+                "Here you can track how your symptoms are progressing. Each graph shows the average severity of a symptom changed over day.",
                 style: TextStyle(fontSize: 14, color: Colors.black54),
               ),
             ),
-            const SizedBox(height: 24),
+            _buildSeverityLegend(), // Add legend here instead
+            const SizedBox(height: 10),
             _buildSymptomSection("Active Symptoms", activeSymptoms),
             const SizedBox(height: 16),
             _buildSymptomSection("Inactive Symptoms", inactiveSymptoms),
@@ -113,6 +114,8 @@ class _SymptomPageState extends State<SymptomPage> {
           if (symptoms.isEmpty)
             Text("No $title symptoms found.", style: const TextStyle(color: Colors.grey)),
           ...symptoms.map((symptom) => Card(
+            elevation: 2,
+            color: Colors.grey[100],
             child: ListTile(
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,15 +159,16 @@ class _SymptomPageState extends State<SymptomPage> {
     final dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     Color getSeverityColor(double value) {
-      if (value <= 1) return Colors.green;
-      if (value <= 2) return Colors.orange;
-      return Colors.red;
+      if (value == 0) return Colors.grey[400]!; // Null check added
+      if (value > 0 && value <= 1) return Colors.green[600]!; // Darker green
+      if (value <= 2) return Colors.orange[600]!; // Darker orange
+      return Colors.red[700]!; // Deeper red
     }
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: SizedBox(
-        height: 180,
+        height: 80,
         child: BarChart(
           BarChartData(
             alignment: BarChartAlignment.spaceAround,
@@ -172,6 +176,15 @@ class _SymptomPageState extends State<SymptomPage> {
             minY: 0,
             gridData: FlGridData(show: false),
             borderData: FlBorderData(show: false),
+            barTouchData: BarTouchData(
+              enabled: true,
+              touchTooltipData: BarTouchTooltipData(
+                tooltipBgColor: Colors.transparent,
+                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  return null; // This completely disables tooltips
+                },
+              ),
+            ),
             titlesData: FlTitlesData(
               leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -182,14 +195,20 @@ class _SymptomPageState extends State<SymptomPage> {
                   getTitlesWidget: (value, meta) {
                     final index = value.toInt();
                     if (index >= 0 && index < dayLabels.length) {
-                      return Text(
-                        dayLabels[index],
-                        style: const TextStyle(fontSize: 12),
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          dayLabels[index],
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[600],
+                          ),
+                        ),
                       );
                     }
                     return const SizedBox.shrink();
                   },
-                  reservedSize: 32,
+                  reservedSize: 24,
                 ),
               ),
             ),
@@ -199,14 +218,23 @@ class _SymptomPageState extends State<SymptomPage> {
                 x: index,
                 barRods: [
                   BarChartRodData(
-                    toY: data[index],
-                    width: 18,
-                    borderRadius: BorderRadius.circular(6),
-                    color: getSeverityColor(data[index]),
+                    toY: 3,
+                    width: 16,
+                    borderRadius: BorderRadius.circular(8),
+                    color: getSeverityColor(data[index]), // Light base
+                    borderSide: BorderSide(
+                      color: getSeverityColor(data[index]),
+                      width: 2,
+                    ),
+                    rodStackItems: [
+                      BarChartRodStackItem(
+                        0,
+                        3,
+                        getSeverityColor(data[index]), // Colored fill
+                      ),
+                    ],
                     backDrawRodData: BackgroundBarChartRodData(
-                      show: true,
-                      toY: 3,
-                      color: Colors.grey.withOpacity(0.1),
+                      show: false,
                     ),
                   ),
                 ],
@@ -217,4 +245,41 @@ class _SymptomPageState extends State<SymptomPage> {
       ),
     );
   }
+
+  Widget _buildSeverityLegend() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
+      child: Wrap(
+        spacing: 12.0,
+        runSpacing: 8.0,
+        children: [
+          _legendItem(Colors.green[600]!, "Mild"),
+          _legendItem(Colors.orange[600]!, "Moderate"),
+          _legendItem(Colors.red[700]!, "Severe"),
+          _legendItem(Colors.grey[400]!, "None"),
+        ],
+      ),
+    );
+  }
+
+  Widget _legendItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: const TextStyle(fontSize: 12)),
+      ],
+    );
+  }
+
 }
+
+

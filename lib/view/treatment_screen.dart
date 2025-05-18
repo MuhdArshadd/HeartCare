@@ -226,7 +226,7 @@ class _TreatmentPageState extends State<TreatmentPage> {
           children: [
             const Text(
               'Treatment Plan',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Container(

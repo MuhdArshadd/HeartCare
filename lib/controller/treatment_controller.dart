@@ -216,6 +216,7 @@ class TreatmentController {
       }
     }
     return [];
+  }
 
 /*[
   {
@@ -236,7 +237,6 @@ class TreatmentController {
   },
   ...
 ]*/
-  }
 
   Future<bool> updateStatusTreatment(int treatmentId) async {
     if (db.isConnected) {

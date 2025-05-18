@@ -173,9 +173,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               Provider.of<UserProvider>(context, listen: false).setUser(user);
 
                               // Navigate to the next screen
-                              Navigator.push(
+                              Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(builder: (context) => const MainNavigationScreen(selectedIndex: 0,)),
+                                (Route<dynamic> route) => false, // removes all previous routes
                               );
                             } else {
                               // Show login failed error

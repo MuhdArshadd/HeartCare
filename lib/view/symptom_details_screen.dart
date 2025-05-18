@@ -239,62 +239,68 @@ class _SymptomDetailPageState extends State<SymptomDetailPage> {
   }
 
   Widget _buildStatusCard(colorScheme, int userId, int symptomId) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Icon(Icons.info_outline, color: colorScheme.primary, size: 20),
-                const SizedBox(width: 8),
-                _buildSectionTitle('Symptom Status'),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Is this symptom still active?',
-              style: TextStyle(fontSize: 15, color: Colors.black54),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatusButton(
-                    text: 'No',
-                    isSelected: !_isActive,
-                    onTap: () => _confirmSymptomStatusChange(false, userId, symptomId),
-                    colorScheme: colorScheme,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatusButton(
-                    text: 'Yes',
-                    isSelected: _isActive,
-                    onTap: () => _confirmSymptomStatusChange(true, userId, symptomId),
-                    colorScheme: colorScheme,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _isActive ? 'You\'re currently experiencing this symptom' : 'This symptom is no longer active',
-              style: TextStyle(
-                fontSize: 13,
-                color: _isActive ? colorScheme.primary : Colors.green,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            const Icon(Icons.info_outline, color: Colors.blueAccent, size: 25),
+            const SizedBox(width: 8),
+            _buildSectionTitle('Symptom Status'),
           ],
         ),
-      ),
+        const SizedBox(height: 12),
+        Card(
+          color: Colors.grey[100],
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Is this symptom still active?',
+                  style: TextStyle(fontSize: 15, color: Colors.black),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatusButton(
+                        text: 'No',
+                        isSelected: !_isActive,
+                        onTap: () => _confirmSymptomStatusChange(false, userId, symptomId),
+                        colorScheme: colorScheme,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatusButton(
+                        text: 'Yes',
+                        isSelected: _isActive,
+                        onTap: () => _confirmSymptomStatusChange(true, userId, symptomId),
+                        colorScheme: colorScheme,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _isActive ? 'You\'re currently experiencing this symptom' : 'This symptom is no longer active',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: _isActive ? colorScheme.primary : Colors.green,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -400,13 +406,14 @@ class _SymptomDetailPageState extends State<SymptomDetailPage> {
       children: [
         Row(
           children: [
-            Icon(Icons.history, color: Theme.of(context).colorScheme.primary, size: 20),
+            const Icon(Icons.history, color: Colors.brown, size: 25),
             const SizedBox(width: 8),
             _buildSectionTitle('Your Symptom History'),
           ],
         ),
         const SizedBox(height: 12),
         Card(
+          color: Colors.grey[100],
           elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -437,7 +444,7 @@ class _SymptomDetailPageState extends State<SymptomDetailPage> {
                     padding: EdgeInsets.symmetric(vertical: 16),
                     child: Text(
                       'No symptoms logged yet. Track your first entry below!',
-                      style: TextStyle(color: Colors.black54),
+                      style: TextStyle(color: Colors.black38),
                     ),
                   );
                 }
@@ -542,44 +549,50 @@ class _SymptomDetailPageState extends State<SymptomDetailPage> {
   }
 
   Widget _buildLogForm(ColorScheme colorScheme) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Icon(Icons.add_circle_outline, color: colorScheme.primary, size: 20),
-                const SizedBox(width: 8),
-                _buildSectionTitle('Track Your Symptom'),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _buildTimePicker(colorScheme),
-            const SizedBox(height: 16),
-            const Text(
-              'How severe is it today?',
-              style: TextStyle(fontSize: 15, color: Colors.black54),
-            ),
-            const SizedBox(height: 12),
-            _buildSeveritySelector(colorScheme),
-            const SizedBox(height: 20),
-            const Text(
-              'Add notes (optional)',
-              style: TextStyle(fontSize: 15, color: Colors.black54),
-            ),
-            const SizedBox(height: 8),
-            _buildNotesField(),
-            const SizedBox(height: 20),
-            _buildSubmitButton(colorScheme),
+            const Icon(Icons.add_circle_outline, color: Colors.green, size: 25),
+            const SizedBox(width: 8),
+            _buildSectionTitle('Track Your Symptom'),
           ],
         ),
-      ),
+        const SizedBox(height: 12),
+        Card(
+          color: Colors.grey[100],
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildTimePicker(colorScheme),
+                const SizedBox(height: 16),
+                const Text(
+                  'How severe is it today?',
+                  style: TextStyle(fontSize: 15, color: Colors.black),
+                ),
+                const SizedBox(height: 12),
+                _buildSeveritySelector(colorScheme),
+                const SizedBox(height: 20),
+                const Text(
+                  'Add notes (optional)',
+                  style: TextStyle(fontSize: 15, color: Colors.black),
+                ),
+                const SizedBox(height: 8),
+                _buildNotesField(),
+                const SizedBox(height: 20),
+                _buildSubmitButton(colorScheme),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -664,7 +677,7 @@ class _SymptomDetailPageState extends State<SymptomDetailPage> {
       width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: colorScheme.primary,
+          backgroundColor: Colors.blueAccent,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -699,7 +712,7 @@ class _SymptomDetailPageState extends State<SymptomDetailPage> {
       children: [
         const Text(
           'When did it happen?',
-          style: TextStyle(fontSize: 15, color: Colors.black54),
+          style: TextStyle(fontSize: 15, color: Colors.black),
         ),
         const SizedBox(height: 8),
         OutlinedButton.icon(

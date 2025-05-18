@@ -31,7 +31,7 @@ class TreatmentTimelineSection extends StatelessWidget {
             children: [
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(timeline.icon, size: 32),
+                leading: Icon(timeline.icon, size: 32, color: _getTimeIconColor(timeline.icon)),
                 title: Text(
                   timeline.name,
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -52,6 +52,20 @@ class TreatmentTimelineSection extends StatelessWidget {
         );
       }).toList(),
     );
+  }
+}
+
+Color _getTimeIconColor(IconData icon) {
+  if (icon == Icons.wb_sunny) {       // Morning
+    return Colors.orange; // Sunrise color
+  } else if (icon == Icons.light_mode) { // Afternoon
+    return Colors.yellow[700]!; // Bright daylight
+  } else if (icon == Icons.nights_stay) { // Evening
+    return Colors.deepPurple; // Twilight
+  } else if (icon == Icons.bedtime) {    // Night
+    return Colors.indigo; // Night time
+  } else {
+    return Colors.grey; // Default
   }
 }
 

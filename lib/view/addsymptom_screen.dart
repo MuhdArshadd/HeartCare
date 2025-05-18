@@ -50,7 +50,9 @@ class _AddSymptomScreenState extends State<AddSymptomScreen> {
     final user = Provider.of<UserProvider>(context).user;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const Text('Add New Symptom'),
       ),
       body: Padding(
@@ -219,6 +221,7 @@ class _AddSymptomScreenState extends State<AddSymptomScreen> {
     final isAlreadyLogged = userActiveSymptoms.contains(id);
 
     return Card(
+      color: Colors.grey[100],
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

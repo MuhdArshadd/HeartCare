@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:heartcare/controller/openai_controller.dart';
 import 'package:heartcare/controller/user_controller.dart';
 import 'package:heartcare/view/popup_screen/diagnose_result_popup.dart';
 import 'package:provider/provider.dart';
 import '../controller/cvd_predictor.dart';
 import '../model/provider/user_provider.dart';
+import 'ai_treatment_recommendation_screen.dart';
 
 class DiagnosePage extends StatefulWidget {
   const DiagnosePage({Key? key}) : super(key: key);
@@ -14,6 +16,7 @@ class DiagnosePage extends StatefulWidget {
 
 class _DiagnosePageState extends State<DiagnosePage> {
   final UserController userController = UserController();
+  final OpenAIService openAIService = OpenAIService();
 
   String riskLevel = '';
   String lastDiagnosis = '';
@@ -90,24 +93,28 @@ class _DiagnosePageState extends State<DiagnosePage> {
           children: [
             Icon(riskIcon, size: 200, color: Colors.redAccent,),
             const SizedBox(height: 10),
-            Text("Risk Level: $riskLevel", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+            Text("Risk Level: $riskLevel", style: const TextStyle(
+                fontWeight: FontWeight.bold, fontSize: 20)),
             Text("Last Diagnose: $lastDiagnosis"),
             const SizedBox(height: 10),
             const Text(
               "HeartCare utilizes an AI model trained on medical datasets to assess and detect an individual's risk level for cardiovascular disease (CVD).",
-              textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Colors.grey),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(height: 20),
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text("CVD Risks Checklist", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              child: Text("CVD Risks Checklist",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ),
             const SizedBox(height: 8),
             _buildCvdRiskTable(),
             const SizedBox(height: 20),
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text("Active Symptoms of CVD (Logged by user)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              child: Text("Active Symptoms of CVD (Logged by user)",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ),
             const SizedBox(height: 8),
             FutureBuilder<Map<String, String>>(
@@ -130,7 +137,8 @@ class _DiagnosePageState extends State<DiagnosePage> {
                 showDialog(
                   context: context,
                   barrierDismissible: false,
-                  builder: (_) => const AlertDialog(
+                  builder: (_) =>
+                  const AlertDialog(
                     backgroundColor: Colors.white,
                     content: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -151,13 +159,17 @@ class _DiagnosePageState extends State<DiagnosePage> {
                 );
 
                 try {
-                  final userProvider = Provider.of<UserProvider>(context, listen: false);
+                  final userProvider = Provider.of<UserProvider>(
+                      context, listen: false);
                   final user = userProvider.user;
 
-                  if (user == null) throw Exception("User data is unavailable.");
+                  if (user == null) throw Exception(
+                      "User data is unavailable.");
 
-                  final symptoms = await userController.getUserActiveSymptoms(user.userID);
-                  final cvdRisks = await userController.getCVDpresence(user.userID);
+                  final symptoms = await userController.getUserActiveSymptoms(
+                      user.userID);
+                  final cvdRisks = await userController.getCVDpresence(
+                      user.userID);
 
                   final predictor = CvdPredictor();
                   await predictor.loadModel();
@@ -170,9 +182,9 @@ class _DiagnosePageState extends State<DiagnosePage> {
                   );
 
                   //Update CVD result
-                  if (riskPrediction == "Low Risk"){
+                  if (riskPrediction == "Low Risk") {
                     userController.updateCVDResult(user.userID, false);
-                  } else if (riskPrediction == "High Risk"){
+                  } else if (riskPrediction == "High Risk") {
                     userController.updateCVDResult(user.userID, true);
                   }
 
@@ -186,9 +198,58 @@ class _DiagnosePageState extends State<DiagnosePage> {
                     builder: (context) {
                       return DiagnoseResultDialog(
                         riskLevel: riskPrediction,
-                        onAccept: () {
-                          Navigator.of(context).pop();
+                        onAccept: () async {
+                          // Show loading dialog
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            // prevent dismiss while loading
+                            builder: (context) =>
+                            const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+
+                          try {
+                            String recommendation = await openAIService
+                                .getAITreatment(user.userID, cvdRisks, symptoms,
+                                riskPrediction);
+                            print("raw ai treatment data: $recommendation");
+
+                            // Remove loading dialog
+                            Navigator.of(context).pop();
+
+                            // Navigate to recommendation screen
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AITreatmentRecommendationScreen(
+                                    userID: user.userID,
+                                    treatments: recommendation),
+                              ),
+                                  (Route<dynamic> route) => false,
+                            );
+                          } catch (e) {
+                            Navigator.of(context)
+                                .pop(); // remove loading dialog on error too
+                            // Optionally show error message here
+                            print("Error fetching AI treatment: $e");
+                          }
                           // AI TREATMENT IMPLEMENTATION
+                          // Steps:
+                          // 1. Send user's active symptoms, cvd risk presences and calculated value of risk level detection on the scale of 0-1 (0 lowest, 1 highest)
+                          // In the function, it will call the treatment controller to fetch the user current treatment
+                          // 2. Prompt to AI to get the treatment based on types of treatment (Medication, Supplements, Diet, Physical Activity)
+                          // 3. Give the AI a schema answer for the treatment.
+                          // 4. Upon receive the answer from AI, transform into a data that can be display and seen to user.
+                          // 5. Depend on the user's acceptance towards AI treatment.
+                          // 6. If user reject: Do nothing and back to homepage
+                          // 7. If user accept:
+                          // Possible Cases to considered:
+                          // 1. User's existence treatment, what can we do about it?
+                          // Answer: Just give the existing treatment to AI , prompt AI to analyse any additional treatment needed.
+                          // If the existing treatment is empty, then AI will fully give the new treatment for user.
+                          // If the existing treatment is not empty, AI will analyse for any necessary new treatment.
                         },
                         onDecline: () {
                           Navigator.of(context).pop();
@@ -201,25 +262,28 @@ class _DiagnosePageState extends State<DiagnosePage> {
                   if (mounted) Navigator.of(context).pop();
                   showDialog(
                     context: context,
-                    builder: (_) => AlertDialog(
-                      title: const Text("Diagnosis Failed"),
-                      content: Text("An error occurred during prediction: $e"),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text("OK"),
-                        )
-                      ],
-                    ),
+                    builder: (_) =>
+                        AlertDialog(
+                          title: const Text("Diagnosis Failed"),
+                          content: Text(
+                              "An error occurred during prediction: $e"),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text("OK"),
+                            )
+                          ],
+                        ),
                   );
                 }
               },
 
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                backgroundColor: Colors.redAccent
+                  minimumSize: const Size(double.infinity, 50),
+                  backgroundColor: Colors.redAccent
               ),
-              child: const Text("Start Diagnose", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),),
+              child: const Text("Start Diagnose", style: TextStyle(
+                  fontWeight: FontWeight.bold, color: Colors.white),),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -251,7 +315,8 @@ class _DiagnosePageState extends State<DiagnosePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                    label, style: const TextStyle(fontWeight: FontWeight.bold)),
                 Text(description, style: const TextStyle(fontSize: 10)),
               ],
             ),
@@ -261,8 +326,10 @@ class _DiagnosePageState extends State<DiagnosePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(status, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text("Last Update: $date", style: const TextStyle(fontSize: 10)),
+                Text(status, style: TextStyle(fontWeight: FontWeight.bold,
+                    color: _getStatusColor(status))),
+                Text(
+                    "Last Update: $date", style: const TextStyle(fontSize: 10)),
               ],
             ),
           ),
@@ -303,13 +370,25 @@ class _DiagnosePageState extends State<DiagnosePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Active", style: TextStyle(fontWeight: FontWeight.bold)),
-                Text("Last Update: $date", style: const TextStyle(fontSize: 10)),
+                Text(
+                    "Active", style: TextStyle(fontWeight: FontWeight.bold, color: _getStatusColor("Active"))),
+                Text(
+                    "Last Update: $date", style: const TextStyle(fontSize: 10)),
               ],
             ),
           ),
         ]);
       }).toList(),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    if (status == "Present" || status == "Active") {
+      return Colors.red[600]!; // Red for urgency/medical
+    } else if (status == "Not Present") {
+      return Colors.green[600]!; // Green for healthy food
+    } else {
+      return Colors.grey;
+    }
   }
 }
