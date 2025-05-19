@@ -112,42 +112,66 @@ class _SymptomPageState extends State<SymptomPage> {
           Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           if (symptoms.isEmpty)
-            Text("No $title symptoms found.", style: const TextStyle(color: Colors.grey)),
-          ...symptoms.map((symptom) => Card(
-            elevation: 2,
-            color: Colors.grey[100],
-            child: ListTile(
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    symptom,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Last Update: ${userSymptoms[symptom]?['lastUpdate'] ?? 'N/A'}",
-                    style: const TextStyle(fontSize: 12, color: Colors.black54),
-                  ),
-                ],
+            Card(
+              elevation: 2,
+              color: Colors.grey[100],
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.grey),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        "No ${title.toLowerCase()} symptoms found.",
+                        style: const TextStyle(fontSize: 14, color: Colors.black54),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              subtitle: SizedBox(height: 80, child: _buildSeverityGraph(symptom)),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                final id = userSymptoms[symptom]?['symptomId'];
-                final userSymptomId = userSymptoms[symptom]?['userSymptomId'];
-                final isActive = userSymptoms[symptom]?['isActive'];
+            )
+          else
+            ...symptoms.map((symptom) => Card(
+              elevation: 2,
+              color: Colors.grey[100],
+              child: ListTile(
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      symptom,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Last Update: ${userSymptoms[symptom]?['lastUpdate'] ?? 'N/A'}",
+                      style: const TextStyle(fontSize: 12, color: Colors.black54),
+                    ),
+                  ],
+                ),
+                subtitle: SizedBox(height: 80, child: _buildSeverityGraph(symptom)),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  final id = userSymptoms[symptom]?['symptomId'];
+                  final userSymptomId = userSymptoms[symptom]?['userSymptomId'];
+                  final isActive = userSymptoms[symptom]?['isActive'];
 
-                print("Selected Symptom: $symptom, ID: $id, User log id: $userSymptomId, Active Status: $isActive");
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SymptomDetailPage(symptomName: symptom, id: id, userSymptomId: userSymptomId, activeSymptom: isActive),
-                  ),
-                );
-              },
-            ),
-          )),
+                  print("Selected Symptom: $symptom, ID: $id, User log id: $userSymptomId, Active Status: $isActive");
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SymptomDetailPage(
+                        symptomName: symptom,
+                        id: id,
+                        userSymptomId: userSymptomId,
+                        activeSymptom: isActive,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            )),
         ],
       ),
     );

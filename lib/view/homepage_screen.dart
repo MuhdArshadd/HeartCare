@@ -98,7 +98,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
       title: "It's Time To Update Your Health!",
       body: "Track your symptoms, record treatments, and keep your heart health in check.",
       hour: 21, // in 24 hour format (9.00PM)
-      minute: 00,
+      minute: 0,
       payload: "general_night_remainder",
     );
 
@@ -258,7 +258,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
                                 TextSpan(text: "Risk Level: "),
                                 TextSpan(
                                   text: riskLevel,
-                                  style: TextStyle(
+                                  style: TextStyle(fontWeight: FontWeight.bold,
                                     color: riskLevel.toLowerCase() == "low risk"
                                         ? Colors.green
                                         : Colors.red,

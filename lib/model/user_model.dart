@@ -77,4 +77,35 @@ class UserModel {
       profileImage: map['profile_image'] != null ? Uint8List.fromList(List<int>.from(map['profile_image'])) : Uint8List(0),
     );
   }
+
+  UserModel copyWith({
+    String? fullname,
+    String? emailAddress,
+    int? age,
+    String? sex,
+    bool? familyHistoryCvd,
+    String? maritalStatus,
+    String? employmentStatus,
+    String? educationLevel,
+    Uint8List? profileImage,
+  }) {
+    return UserModel(
+      userID: this.userID, // Preserve existing ID
+      username: this.username, // Preserve existing username
+      fullname: fullname ?? this.fullname,
+      emailAddress: emailAddress ?? this.emailAddress,
+      password: this.password, // Preserve existing password
+      age: age ?? this.age, // Preserve existing age
+      sex: sex ?? this.sex, // Preserve existing sex
+      bodyWeight: this.bodyWeight, // Preserve existing body weight
+      height: this.height, // Preserve existing height
+      familyHistoryCvd: familyHistoryCvd ?? this.familyHistoryCvd,
+      ethnicityGroup: this.ethnicityGroup, // Preserve existing ethnicity group
+      maritalStatus: maritalStatus ?? this.maritalStatus,
+      employmentStatus: employmentStatus ?? this.employmentStatus,
+      educationLevel: educationLevel ?? this.educationLevel,
+      profileImage: profileImage ?? this.profileImage,
+    );
+  }
+
 }

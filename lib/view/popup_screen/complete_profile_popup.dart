@@ -44,7 +44,7 @@ class ProfileCompletionPopup extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const Text(
-            'Please complete your profile before\nproceeding with HeartCare\'s AI Diagnose.',
+            'Please complete your profile before proceeding with HeartCare\'s AI Diagnose.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,

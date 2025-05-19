@@ -1,4 +1,9 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:heartcare/controller/user_controller.dart';
 import 'package:heartcare/model/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'login_screen.dart';
@@ -11,22 +16,165 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final UserController userController = UserController();
+
   int _selectedSection = 0;
-  bool _isLoading = false; // To control loading state
+  bool _isLoading = false;
+  bool _isEditing = false;
+  final _formKey = GlobalKey<FormState>();
+
+  // Controllers for editable fields
+  late TextEditingController _fullNameController;
+  late TextEditingController _emailController;
+  late TextEditingController _ageController;
+  late String _selectedSex;
+  late bool _familyHistoryCvd;
+  late String _selectedEthnicity;
+  late String _selectedMaritalStatus;
+  late String _selectedEmploymentStatus;
+  late String _selectedEducationLevel;
+  late String _heartHealthStatus = 'Not Available';
+  late String _lastCheckup = 'Never';
+  late String _smokingStatus = 'No';
+
+  Map<String,String> userInfo = {};
+
+  Uint8List? imageBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    if (user != null) {
+      _initializeControllers(user);
+      _loadHealthData(user.userID); // Separate function for async loading
+    }
+  }
+
+  Future<void> _loadHealthData(int userId) async {
+    try {
+      final healthData = await userController.getHeartHealthStatusAndSmoking(userId);
+      if (healthData.isNotEmpty) {
+        setState(() {
+          _heartHealthStatus = healthData['heartHealthStatus'] ?? 'Not Available';
+          _lastCheckup = healthData['lastCheckup'] ?? 'Never';
+          _smokingStatus = healthData['smokingStatus'] ?? 'No';
+        });
+      }
+    } catch (e) {
+      print('Error loading health data: $e');
+      // Consider showing an error to the user if needed
+    }
+  }
+
+  void _initializeControllers(user) {
+    _fullNameController = TextEditingController(text: user.fullname ?? '');
+    _emailController = TextEditingController(text: user.emailAddress ?? '');
+    _ageController = TextEditingController(text: user.age?.toString() ?? '');
+    _selectedSex = user.sex ?? 'Male';
+    _familyHistoryCvd = user.familyHistoryCvd ?? false;
+    _selectedEthnicity = user.ethnicityGroup ?? 'N/A';
+    _selectedMaritalStatus = user.maritalStatus ?? 'N/A';
+    _selectedEmploymentStatus = user.employmentStatus ?? 'N/A';
+    _selectedEducationLevel = user.educationLevel ?? 'N/A';
+  }
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _emailController.dispose();
+    _ageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
+
+    if (result != null) {
+      String? filePath = result.files.single.path;
+      if (filePath != null) {
+        final File file = File(filePath);
+        final Uint8List imageBytess = await file.readAsBytes();
+        setState(() {
+          imageBytes = imageBytess;
+        });
+      }
+    }
+  }
+
+  Future<void> _saveChangesToBackend(user, String isSmoking) async {
+    setState(() => _isLoading = true);
+    bool smoking = isSmoking == 'Yes';
+
+    try {
+      // Prepare updated user data
+      final updatedUser = user.copyWith(
+        fullname: _fullNameController.text,
+        emailAddress: _emailController.text,
+        age: int.tryParse(_ageController.text),
+        sex: _selectedSex,
+        familyHistoryCvd: _familyHistoryCvd,
+        maritalStatus: _selectedMaritalStatus,
+        employmentStatus: _selectedEmploymentStatus,
+        educationLevel: _selectedEducationLevel,
+        profileImage: imageBytes ?? user.profileImage,
+      );
+
+      // Call UserController to update
+      final updateSuccess = await userController.updateUserInfo(updatedUser, smoking);
+
+      if (updateSuccess) {
+        // Update provider and local state only if update was successful
+        Provider.of<UserProvider>(context, listen: false).setUser(updatedUser);
+
+        // Reset editing state and clear picked image
+        setState(() {
+          _isEditing = false;
+          imageBytes = null;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Profile updated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // Show warning if update failed but didn't throw exception
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update profile'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        // Keep editing mode on if update failed
+        setState(() => _isEditing = true);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error updating profile: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      // Revert to editing mode on error
+      setState(() => _isEditing = true);
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<UserProvider>(context).user;
+    final theme = Theme.of(context);
 
-    // If user data is null, show a loading state or direct to login
     if (user == null) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      ); // Or navigate to login screen if preferred
+      return const Center(child: CircularProgressIndicator());
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -39,255 +187,582 @@ class _ProfilePageState extends State<ProfilePage> {
             height: 40,
           ),
         ),
+        actions: [
+          if (!_isEditing)
+            IconButton(
+              icon: Icon(Icons.edit, color: Colors.blue),
+              onPressed: () {
+                setState(() {
+                  _isEditing = true;
+                });
+              },
+            ),
+          if (_isEditing)
+            TextButton(
+              onPressed: () async {
+                if (_formKey.currentState?.validate() ?? false) {
+                  try {
+                    setState(() {
+                      _isEditing = false;
+                    });
+                    await _saveChangesToBackend(user, _smokingStatus);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Profile updated successfully'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } catch (e) {
+                    // Show error message if save fails
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to update profile: ${e.toString()}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    // Re-enable editing if save failed
+                    setState(() {
+                      _isEditing = true;
+                    });
+                  }
+                }
+              },
+              child: Text('SAVE', style: TextStyle(color: Colors.blue)),
+            ),
+          if (_isEditing)
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _isEditing = false;
+                  _initializeControllers(user); // Reset to original values
+                });
+              },
+              child: Text('CANCEL', style: TextStyle(color: Colors.redAccent)),
+            ),
+        ],
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: const Text(
-                  'Profile Page',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+        child: Form(
+          key: _formKey,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                // Profile Header with Medical Card Style
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.redAccent,
+                                width: 2,
+                              ),
+                            ),
+                            child: CircleAvatar(
+                              radius: 50,
+                              backgroundColor: Colors.grey[200],
+                              backgroundImage: _getProfileImage(user),
+                              child: _showProfileIcon(user),
+                            ),
+                          ),
+                          if (_isEditing)
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.blue,
+                              ),
+                              child: IconButton(
+                                icon: Icon(Icons.camera_alt, size: 20, color: Colors.white),
+                                onPressed: _pickImage, // Fixed: removed the semicolon
+                              ),
+                            ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        '@${user.username}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        user.fullname ?? '',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'HeartCare Member',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.redAccent,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                SizedBox(height: 24),
 
-              // Profile Image with Edit Option
-              Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundImage: (user.profileImage != null && user.profileImage!.isNotEmpty) ? MemoryImage(user.profileImage!) : null,
-                    child: (user.profileImage == null || user.profileImage!.isEmpty) ? const Icon(Icons.person, size: 60) : null,
+                // Medical-themed section tabs
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.white),
-                    onPressed: () {
-                      // TODO: Add image change logic
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          _buildMedicalTabButton(0, 'Health Profile'),
+                          _buildMedicalTabButton(1, 'Personal Details'),
+                        ],
+                      ),
+                      Divider(height: 1, color: Colors.grey[300]),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16),
+
+                // Content Section
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 6,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  padding: EdgeInsets.all(16),
+                  child: _selectedSection == 0
+                      ? _buildHealthProfileSection(user)
+                      : _buildPersonalDetailsSection(user),
+                ),
+
+                SizedBox(height: 24),
+                // Logout Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      _showLogoutConfirmation(context);
                     },
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-              Text(
-                '@${user.username}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              // Section Selector
-              Row(
-                children: [
-                  _buildSectionButton(0, 'Account Info'),
-                  _buildSectionButton(1, 'Personal Info'),
-                ],
-              ),
-              const Divider(thickness: 1),
-              const SizedBox(height: 10),
-
-              _selectedSection == 0
-                  ? _buildAccountInfo(user)
-                  : _buildPersonalInfo(user),
-
-              const SizedBox(height: 40),
-              ElevatedButton(
-                onPressed: () async {
-                  // Show loading dialog immediately
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) => const Center(
-                      child: CircularProgressIndicator(),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.redAccent,
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                  );
-
-                  setState(() {
-                    _isLoading = true; // Show loading state
-                  });
-
-                  // Show a loading indicator before navigating
-                  await Future.delayed(const Duration(seconds: 2));
-
-                  // Clear user data (provider) and shared preferences
-                  Provider.of<UserProvider>(context, listen: false).clearUser();
-
-                  // Close the loading dialog
-                  Navigator.of(context).pop();
-
-                  // Navigate to Login Page and replace the current route
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (route) => false,
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.red,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                    child: _isLoading
+                        ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                        : Text(
+                      'LOG OUT',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
                 ),
-                child: const Text('Log Out'),
-              ),
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionButton(int index, String title) {
-    return Expanded(
-      child: TextButton(
-        onPressed: () {
-          setState(() {
-            _selectedSection = index;
-            print('Switched to section: $_selectedSection');
-          });
-        },
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero,
-          ),
-          backgroundColor:
-          _selectedSection == index ? Colors.grey[200] : Colors.transparent,
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontWeight:
-            _selectedSection == index ? FontWeight.bold : FontWeight.normal,
-            color: _selectedSection == index ? Colors.blue : Colors.black,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAccountInfo(user) {
-    return Column(
-      children: [
-        _buildTextField('Full Name', user.fullname, false, true),
-        _buildTextField('Email Address', user.emailAddress, true),
-        _buildTextField('Password', '•••••••••••', true),
-        _buildTextField('Age', user.age.toString(), true),
-        _buildTextField('Sex', user.sex, true),
-      ],
-    );
-  }
-
-  Widget _buildPersonalInfo(user) {
-    return Column(
-      children: [
-        _buildCheckboxField('Family History of CVD?', user.familyHistoryCvd),
-        _buildDropdownField(
-          label: 'Ethnicity Group',
-          value: user.ethnicityGroup,
-          items: ['N/A','Malay', 'Non-Malay'],
-        ),
-        _buildDropdownField(
-          label: 'Marital Status',
-          value: user.maritalStatus,
-          items: ['N/A','Single', 'Divorced', 'Widowed', 'Married'],
-        ),
-        _buildDropdownField(
-          label: 'Employment Status',
-          value: user.employmentStatus,
-          items: ['N/A','Employed', 'Unemployed'],
-        ),
-        _buildDropdownField(
-          label: 'Education Level',
-          value: user.educationLevel,
-          items: ['N/A','No Formal Education', 'Primary', 'Secondary', 'Tertiary'],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCheckboxField(String label, bool value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                SizedBox(height: 16),
+              ],
             ),
           ),
-          Checkbox(
-            value: value,
-            onChanged: (newValue) {
-              // TODO: Add logic to update the user model
-              setState(() {
-                // Simulate update
-              });
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMedicalTabButton(int index, String title) {
+    final isSelected = _selectedSection == index;
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _selectedSection = index;
+          });
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isSelected ? Colors.redAccent : Colors.transparent,
+                width: 2,
+              ),
+            ),
+          ),
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected ? Colors.redAccent : Colors.black,
+              fontSize: 16,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHealthProfileSection(user) {
+    return Column(
+      children: [
+        _buildMedicalInfoTile(
+          icon: Icons.favorite,
+          iconColor: Colors.redAccent,
+          label: 'Heart Health Status',
+          value: _heartHealthStatus,
+          isEditable: false,
+        ),
+        Divider(),
+        _buildMedicalInfoTile(
+          icon: Icons.medical_services,
+          iconColor: Colors.blue,
+          label: 'Last Checkup',
+          value: _lastCheckup,
+          isEditable: false,
+        ),
+        Divider(),
+        _buildMedicalInfoTile(
+          icon: Icons.history,
+          iconColor: Colors.blue,
+          label: 'Family History of CVD',
+          value: _familyHistoryCvd ? 'Yes' : 'No',
+          isEditable: _isEditing,
+          onEdit: (newValue) {
+            setState(() {
+              _familyHistoryCvd = newValue == 'Yes';
+            });
+          },
+          editableOptions: ['Yes', 'No'],
+        ),
+        Divider(),
+        _buildMedicalInfoTile(
+          icon: Icons.smoking_rooms,
+          iconColor: Colors.blue,
+          label: 'Currently Smoking?',
+          value: _smokingStatus,
+          isEditable: _isEditing,
+          onEdit: (newValue) {
+            setState(() {
+              _smokingStatus = newValue;
+            });
+          },
+          editableOptions: ['Yes', 'No'],
+        ),
+        Divider(),
+        _buildMedicalInfoTile(
+          icon: Icons.calendar_today,
+          iconColor: Colors.blue,
+          label: 'Age',
+          value: _ageController.text,
+          isEditable: _isEditing,
+          isTextEditable: true,
+          controller: _ageController,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter your age';
+            }
+            if (int.tryParse(value) == null) {
+              return 'Please enter a valid number';
+            }
+            return null;
+          },
+        ),
+        Divider(),
+        _buildMedicalInfoTile(
+          icon: Icons.people,
+          iconColor: Colors.blue,
+          label: 'Sex',
+          value: _selectedSex,
+          isEditable: _isEditing,
+          onEdit: (newValue) {
+            setState(() {
+              _selectedSex = newValue;
+            });
+          },
+          editableOptions: ['Male', 'Female'],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPersonalDetailsSection(user) {
+    return Column(
+      children: [
+        _buildMedicalInfoTile(
+          icon: Icons.person,
+          iconColor: Colors.blue,
+          label: 'Full Name',
+          value: _fullNameController.text,
+          isEditable: _isEditing,
+          isTextEditable: true,
+          controller: _fullNameController,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter your name';
+            }
+            return null;
+          },
+        ),
+        Divider(),
+        _buildMedicalInfoTile(
+          icon: Icons.email,
+          iconColor: Colors.blue,
+          label: 'Email Address',
+          value: _emailController.text,
+          isEditable: _isEditing,
+          isTextEditable: true,
+          controller: _emailController,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter your email';
+            }
+            if (!value.contains('@')) {
+              return 'Please enter a valid email';
+            }
+            return null;
+          },
+        ),
+        Divider(),
+        _buildMedicalInfoTile(
+          icon: Icons.group,
+          iconColor: Colors.blue,
+          label: 'Ethnicity Group',
+          value: _selectedEthnicity,
+          isEditable: false,
+        ),
+        Divider(),
+        _buildMedicalInfoTile(
+          icon: Icons.family_restroom,
+          iconColor: Colors.blue,
+          label: 'Marital Status',
+          value: _selectedMaritalStatus,
+          isEditable: _isEditing,
+          onEdit: (newValue) {
+            setState(() {
+              _selectedMaritalStatus = newValue;
+            });
+          },
+          editableOptions: ['N/A', 'Single', 'Divorced', 'Widowed', 'Married'],
+        ),
+        Divider(),
+        _buildMedicalInfoTile(
+          icon: Icons.work,
+          iconColor: Colors.blue,
+          label: 'Employment Status',
+          value: _selectedEmploymentStatus,
+          isEditable: _isEditing,
+          onEdit: (newValue) {
+            setState(() {
+              _selectedEmploymentStatus = newValue;
+            });
+          },
+          editableOptions: ['N/A', 'Employed', 'Unemployed'],
+        ),
+        Divider(),
+        _buildMedicalInfoTile(
+          icon: Icons.school,
+          iconColor: Colors.blue,
+          label: 'Education Level',
+          value: _selectedEducationLevel,
+          isEditable: _isEditing,
+          onEdit: (newValue) {
+            setState(() {
+              _selectedEducationLevel = newValue;
+            });
+          },
+          editableOptions: [
+            'N/A',
+            'No Formal Education',
+            'Primary',
+            'Secondary',
+            'Tertiary'
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMedicalInfoTile({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String value,
+    bool isEditable = false,
+    bool isTextEditable = false,
+    TextEditingController? controller,
+    String? Function(String?)? validator,
+    Function(String)? onEdit,
+    List<String>? editableOptions,
+  }) {
+    return ListTile(
+      leading: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: iconColor.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: iconColor),
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.black54,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: isEditable && isTextEditable
+          ? TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          border: UnderlineInputBorder(),
+          contentPadding: EdgeInsets.zero,
+        ),
+        style: TextStyle(
+          fontSize: 16,
+          color: Colors.black,
+          fontWeight: FontWeight.bold,
+        ),
+        validator: validator,
+      )
+          : isEditable && editableOptions != null
+          ? DropdownButtonFormField<String>(
+        value: value,
+        items: editableOptions.map((option) {
+          return DropdownMenuItem(
+            value: option,
+            child: Text(option),
+          );
+        }).toList(),
+        onChanged: (newValue) {
+          if (newValue != null && onEdit != null) {
+            onEdit(newValue);
+          }
+        },
+        decoration: InputDecoration(
+          border: UnderlineInputBorder(),
+          contentPadding: EdgeInsets.zero,
+        ),
+        style: TextStyle(
+          fontSize: 16,
+          color: Colors.black,
+          fontWeight: FontWeight.bold,
+        ),
+      )
+          : Text(
+        value,
+        style: TextStyle(
+          fontSize: 16,
+          color: Colors.black,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Log Out', style: TextStyle(color: Colors.redAccent)),
+        content: Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog first
+              await _performLogout(context);
             },
+            child: Text('LOG OUT', style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDropdownField({
-    required String label,
-    required String value,
-    required List<String> items,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField<String>(
-        value: items.contains(value) ? value : null,
-        onChanged: (newValue) {
-          // TODO: Add logic to update the user model
-          setState(() {
-            // Simulate update
-          });
-        },
-        items: items.map((item) {
-          return DropdownMenuItem(
-            value: item,
-            child: Text(item),
-          );
-        }).toList(),
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
-      ),
-    );
+  Future<void> _performLogout(BuildContext context) async {
+    setState(() => _isLoading = true);
+
+    try {
+      // Clear provider state
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      userProvider.clearUser();
+
+      // Navigate to login screen
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (route) => false,
+      );
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Logout failed: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
+  ImageProvider? _getProfileImage(user) {
+    if (imageBytes != null) {
+      return MemoryImage(imageBytes!);
+    } else if (user.profileImage != null && user.profileImage!.isNotEmpty) {
+      return MemoryImage(user.profileImage!);
+    }
+    return null;
+  }
 
-  Widget _buildTextField(String label, String initialValue,
-      [bool isEditable = true, bool isDisabled = false]) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        key: ValueKey(label),  // Each field a unique identity
-        initialValue: initialValue,
-        readOnly: !isEditable || isDisabled,
-        decoration: InputDecoration(
-          labelText: label,
-          filled: isDisabled,
-          fillColor: isDisabled ? Colors.grey[200] : null,
-          border: const OutlineInputBorder(),
-        ),
-      ),
-    );
+  Widget? _showProfileIcon(user) {
+    if (imageBytes == null &&
+        (user.profileImage == null || user.profileImage!.isEmpty)) {
+      return Icon(Icons.person, size: 50, color: Colors.blue);
+    }
+    return null;
   }
 
 }

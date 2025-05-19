@@ -1,4 +1,6 @@
 import 'dart:typed_data';
+import 'package:intl/intl.dart';
+
 import '../database_service.dart';
 import 'dart:convert';
 import '../model/user_model.dart';
@@ -453,6 +455,153 @@ class UserController {
     return healthReadings;
   }
 
+  Future<Map<String, String>> getHeartHealthStatusAndSmoking(int userID) async {
+    Map<String, String> userInfo = {};
+
+    if (db.isConnected) {
+      try {
+        final results = await db.connection!.query(
+          '''
+          SELECT cvd.bool_result, cvd.recorded_at, urf.bool_risk_presence
+          FROM CVD_RESULT AS cvd
+          JOIN USER_RISK_FACTOR AS urf ON cvd.user_id = urf.user_id
+          WHERE cvd.user_id = @userID
+            AND urf.risk_id IN (SELECT risk_id FROM CVD_RISK_FACTOR WHERE cvd_risk_name = 'Smoking')
+          ORDER BY cvd.recorded_at DESC
+          LIMIT 1;
+          ''',
+          substitutionValues: {'userID': userID},
+        );
+
+        if (results.isNotEmpty) {
+          final row = results.first;
+
+          // Convert bool_result to readable status
+          String healthStatus = 'Normal';
+          if (row[0] == true) {
+            healthStatus = 'High';
+          } else{
+            healthStatus = 'Low';
+          }
+
+          // Format the date
+          DateTime recordedAt = row[1];
+          String formattedDate = DateFormat('dd MMM yyyy').format(recordedAt);
+
+          // Convert smoking status
+          String smokingStatus = row[2] == true ? 'Yes' : 'No';
+
+          userInfo = {
+            'heartHealthStatus': healthStatus,
+            'lastCheckup': formattedDate,
+            'smokingStatus': smokingStatus,
+          };
+        }
+      } catch (e) {
+        print("Error fetching Heart Health Status: $e");
+      }
+    }
+
+    // Return default values if no data found
+    return userInfo..putIfAbsent('heartHealthStatus', () => 'Not Available')
+      ..putIfAbsent('lastCheckup', () => 'Never')
+      ..putIfAbsent('smokingStatus', () => 'No');
+  }
+
+  Future<bool> updateUserInfo(user, bool isSmoking) async {
+    if (db.isConnected) {
+      try {
+        // Start transaction for atomic updates
+        await db.connection!.transaction((ctx) async {
+          // Update the user profile information
+          if (user.profileImage != null && user.profileImage!.isNotEmpty) {
+            final base64Image = base64Encode(user.profileImage!);
+
+            await ctx.query(
+              '''
+            UPDATE USERS
+            SET 
+              fullname = @fullname,
+              email_address = @email,
+              age = @age,
+              sex = @sex,
+              family_history_cvd = @familyHistory,
+              marital_status = @maritalStatus,
+              employment_status = @employmentStatus,
+              education_level = @educationLevel,
+              profile_image = decode(@profile_image, 'base64')
+            WHERE user_id = @userID
+            ''',
+              substitutionValues: {
+                'fullname': user.fullname,
+                'email': user.emailAddress,
+                'age': user.age,
+                'sex': user.sex,
+                'familyHistory': user.familyHistoryCvd,
+                'maritalStatus': user.maritalStatus,
+                'employmentStatus': user.employmentStatus,
+                'educationLevel': user.educationLevel,
+                'profile_image': base64Image,
+                'userID': user.userID,
+              },
+            );
+          } else {
+            await ctx.query(
+              '''
+            UPDATE USERS
+            SET 
+              fullname = @fullname,
+              email_address = @email,
+              age = @age,
+              sex = @sex,
+              family_history_cvd = @familyHistory,
+              marital_status = @maritalStatus,
+              employment_status = @employmentStatus,
+              education_level = @educationLevel
+            WHERE user_id = @userID
+            ''',
+              substitutionValues: {
+                'fullname': user.fullname,
+                'email': user.emailAddress,
+                'age': user.age,
+                'sex': user.sex,
+                'familyHistory': user.familyHistoryCvd,
+                'maritalStatus': user.maritalStatus,
+                'employmentStatus': user.employmentStatus,
+                'educationLevel': user.educationLevel,
+                'userID': user.userID,
+              },
+            );
+          }
+
+          // Update smoking status in health data
+          await ctx.query(
+            '''
+              UPDATE USER_RISK_FACTOR
+              SET bool_risk_presence = @smokingStatus, last_update = NOW()
+              WHERE user_id = @userID AND risk_id = (
+                  SELECT risk_id FROM CVD_RISK_FACTOR 
+                  WHERE cvd_risk_name = 'Smoking'
+              )
+              ''',
+            substitutionValues: {
+              'smokingStatus': isSmoking,
+              'userID': user.userID,
+            },
+          );
+        });
+
+        print('User profile updated successfully');
+        return true;
+      } catch (e) {
+        print('Error updating user profile: $e');
+        return false;
+      }
+    } else {
+      throw Exception('Database not connected');
+    }
+  }
+
   String hashPassword(String password) {
     final bytes = utf8.encode(password);
     final hash = sha256.convert(bytes);
@@ -483,4 +632,5 @@ class UserController {
     }
     return false;
   }
+
 }
