@@ -273,15 +273,38 @@ class _SymptomPageState extends State<SymptomPage> {
   Widget _buildSeverityLegend() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
-      child: Wrap(
-        spacing: 12.0,
-        runSpacing: 8.0,
-        children: [
-          _legendItem(Colors.green[600]!, "Mild"),
-          _legendItem(Colors.orange[600]!, "Moderate"),
-          _legendItem(Colors.red[700]!, "Severe"),
-          _legendItem(Colors.grey[400]!, "None"),
-        ],
+      child: Card(
+        color: Colors.grey[100],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Severity Level Indicator',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12.0,
+                runSpacing: 8.0,
+                children: [
+                  _legendItem(Colors.green[600]!, "Mild"),
+                  _legendItem(Colors.orange[600]!, "Moderate"),
+                  _legendItem(Colors.red[700]!, "Severe"),
+                  _legendItem(Colors.grey[400]!, "None"),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

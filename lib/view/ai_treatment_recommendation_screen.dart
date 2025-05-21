@@ -72,7 +72,6 @@ class _AITreatmentRecommendationScreenState extends State<AITreatmentRecommendat
       "Night": "8 PM - 6 AM",
     };
 
-
     for (var treatment in _treatmentList) {
       for (String time in treatment['timesOfDay']) {
         treatmentsByTime[time]?.add(treatment);
@@ -81,30 +80,48 @@ class _AITreatmentRecommendationScreenState extends State<AITreatmentRecommendat
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("AI Treatment Recommendation", style: TextStyle(fontWeight: FontWeight.bold),),
+        title: const Text("AI Treatment Recommendation", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: treatmentsByTime.entries.map((entry) {
-            if (entry.value.isEmpty) return const SizedBox();
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "${entry.key} (${timeRanges[entry.key] ?? ''})",
-                  style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.redAccent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                "DISCLAIMER: These AI-generated recommendations are for informational purposes only and should not replace professional medical advice.\n\nAlways consult with your healthcare provider before starting any new treatment regimen.",
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold
                 ),
-                const SizedBox(height: 8),
-                ...entry.value.map((treatment) => _buildTreatmentCard(context, treatment)).toList(),
-                const SizedBox(height: 24),
-              ],
-            );
-          }).toList(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...treatmentsByTime.entries.map((entry) {
+              if (entry.value.isEmpty) return const SizedBox();
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "${entry.key} (${timeRanges[entry.key] ?? ''})",
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...entry.value.map((treatment) => _buildTreatmentCard(context, treatment)).toList(),
+                  const SizedBox(height: 24),
+                ],
+              );
+            }).toList(),
+          ],
         ),
       ),
       bottomNavigationBar: Padding(
