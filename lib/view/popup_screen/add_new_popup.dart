@@ -72,7 +72,7 @@ class AddNewPopup extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 28, color: Colors.black54,),
+          Icon(icon, size: 28, color: Colors.white,),
           const SizedBox(width: 12),
           Text(
             title,

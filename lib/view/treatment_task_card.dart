@@ -52,15 +52,48 @@ class TreatmentTaskCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton.icon(
-                    icon: Icon(task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked),
-                    label: Text(task.isCompleted ? 'Completed' : 'Mark Complete'),
-                    onPressed: () => onToggleStatus(timelineId, task.id, markCompleted: true),
+                  Expanded( // Add this
+                    child: TextButton.icon(
+                      icon: Icon(
+                        task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                        color: task.isCompleted ? Colors.green[800] : Colors.green[700],
+                      ),
+                      label: Text(
+                        task.isCompleted ? 'Completed' : 'Complete',
+                        style: TextStyle(color: Colors.green[800]),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.green[700],
+                        backgroundColor: Colors.green[50],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(color: Colors.green[100]!),
+                        ),
+                      ),
+                      onPressed: () => onToggleStatus(timelineId, task.id, markCompleted: true),
+                    ),
                   ),
-                  TextButton.icon(
-                    icon: Icon(task.isSkipped ? Icons.cancel : Icons.remove_circle_outline),
-                    label: Text(task.isSkipped ? 'Skipped' : 'Skip'),
-                    onPressed: () => onToggleStatus(timelineId, task.id,  markCompleted: false),
+                  const SizedBox(width: 8),
+                  Expanded( // Add this
+                    child: TextButton.icon(
+                      icon: Icon(
+                        task.isSkipped ? Icons.cancel : Icons.remove_circle_outline,
+                        color: task.isSkipped ? Colors.red[800] : Colors.red[700],
+                      ),
+                      label: Text(
+                        task.isSkipped ? 'Skipped' : 'Skip',
+                        style: TextStyle(color: Colors.red[800]),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red[700],
+                        backgroundColor: Colors.red[50],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(color: Colors.red[100]!),
+                        ),
+                      ),
+                      onPressed: () => onToggleStatus(timelineId, task.id, markCompleted: false),
+                    ),
                   ),
                 ],
               ),
