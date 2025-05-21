@@ -15,7 +15,6 @@ class TreatmentTimelineSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (timelines.isEmpty) return const _NoTimelineMessage();
-
     return Column(
       children: timelines.map((timeline) {
         final hasTreatments = timeline.treatments.isNotEmpty;
@@ -23,6 +22,7 @@ class TreatmentTimelineSection extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 20),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
+            color: Colors.grey.shade100,
             border: Border.all(color: Colors.grey.shade300),
             borderRadius: BorderRadius.circular(12),
           ),
