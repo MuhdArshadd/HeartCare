@@ -52,24 +52,32 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
 
 
   // Method to validate the entered verification code
-  void _verifyCode() {
+  Future<void> _verifyCode() async {
+    String success = "";
     String enteredCode =
         _controller1.text + _controller2.text + _controller3.text +
             _controller4.text + _controller5.text + _controller6.text;
 
     if (enteredCode == _sentCode.toString()) {
       //update the password
-      final UserController _userController = UserController();
-      _userController.resetPass(widget.email, widget.newPass);
+      final UserController userController = UserController();
+      success = await userController.resetPass("password_verification_page",widget.email, widget.newPass);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Verification successful!')),
-      );
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (Route<dynamic> route) => false, // removes all previous routes
-      );
+      if (success == "Password update successful.") {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Verification successful!')),
+        );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+              (Route<dynamic> route) => false, // removes all previous routes
+        );
+      } else if (success == "Failed to update password.") {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update password.')),
+        );
+        return;
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Incorrect verification code. Please try again.')),
@@ -131,17 +139,18 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        buildVerificationDigitField(_controller1, _focusNode1, _focusNode2),
-                        const SizedBox(width: 10),
-                        buildVerificationDigitField(_controller2, _focusNode2, _focusNode3),
-                        const SizedBox(width: 10),
-                        buildVerificationDigitField(_controller3, _focusNode3, _focusNode4),
-                        const SizedBox(width: 10),
-                        buildVerificationDigitField(_controller4, _focusNode4, _focusNode5),
-                        const SizedBox(width: 10),
-                        buildVerificationDigitField(_controller5, _focusNode5, _focusNode6),
-                        const SizedBox(width: 10),
-                        buildVerificationDigitField(_controller6, _focusNode6, _focusNode6),
+                        for (int i = 0; i < 6; i++) ...[
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                              child: buildVerificationDigitField(
+                                [ _controller1, _controller2, _controller3, _controller4, _controller5, _controller6 ][i],
+                                [ _focusNode1, _focusNode2, _focusNode3, _focusNode4, _focusNode5, _focusNode6 ][i],
+                                i == 5 ? _focusNode6 : [ _focusNode1, _focusNode2, _focusNode3, _focusNode4, _focusNode5, _focusNode6 ][i + 1],
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

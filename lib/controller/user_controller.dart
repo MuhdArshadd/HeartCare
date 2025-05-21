@@ -201,20 +201,43 @@ class UserController {
     }
   }
 
-  Future<String> resetPass(String email, String newPassword) async {
+  Future<String> resetPass(String page, String email, String newPassword) async {
+    String hashedPassword = "";
     if (db.isConnected) {
       try {
-        // Execute query with email and newPassword as substitution values
-        await db.connection!.query(
-          """
-          UPDATE users SET password = @password WHERE email_address = @email_address
+        if (page == "reset_password_screen") {
+          final result = await db.connection!.query(
+            """
+            SELECT * FROM USERS WHERE email_address = @email_address
+            """,
+            substitutionValues: {
+              'email_address': email, // Use the passed email
+            },
+          );
+          if (result.isNotEmpty) {
+            return "Valid User";
+          } else {
+            return "Invalid User";
+          }
+        }
+        else if (page == "password_verification_page"){
+          hashedPassword = hashPassword(newPassword);
+          // Execute query with email and newPassword as substitution values
+          final result = await db.connection!.query(
+            """
+          UPDATE users SET password = @hashedPassword WHERE email_address = @email_address
           """,
-          substitutionValues: {
-            'email_address': email, // Use the passed email
-            'password': newPassword, // Use the passed new password
-          },
-        );
-        return "Password update successful";
+            substitutionValues: {
+              'email_address': email, // Use the passed email
+              'hashedPassword': hashedPassword, // Use the passed new password , but hashed
+            },
+          );
+          if (result.affectedRowCount > 0) {
+            return "Password update successful.";
+          } else {
+            return "Failed to update password.";
+          }
+        }
       } catch (e) {
         return "Error updating password: $e";
       }

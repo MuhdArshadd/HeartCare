@@ -172,11 +172,67 @@ class _LoginScreenState extends State<LoginScreen> {
                               // Save to global state and shared preferences
                               Provider.of<UserProvider>(context, listen: false).setUser(user);
 
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false, // Prevent dismissal
+                                builder: (BuildContext context) {
+                                  return Dialog(
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    elevation: 10,
+                                    backgroundColor: Colors.white,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 20.0),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: Colors.grey[100],
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withOpacity(0.1),
+                                                  blurRadius: 8,
+                                                  offset: const Offset(0, 4),
+                                                ),
+                                              ],
+                                            ),
+                                            child: const CircularProgressIndicator(strokeWidth: 3),
+                                          ),
+                                          const SizedBox(height: 24),
+                                          Text(
+                                            'Logging In...',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              color: Theme.of(context).primaryColor,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          const Text(
+                                            'Please wait while we prepare your dashboard.',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(fontSize: 14, color: Colors.black54),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+
+                              // Wait 1 second before navigating
+                              await Future.delayed(const Duration(seconds: 1));
+
+                              // Dismiss the dialog
+                              Navigator.of(context, rootNavigator: true).pop();
+
                               // Navigate to the next screen
                               Navigator.pushAndRemoveUntil(
                                 context,
-                                MaterialPageRoute(builder: (context) => const MainNavigationScreen(selectedIndex: 0,)),
-                                (Route<dynamic> route) => false, // removes all previous routes
+                                MaterialPageRoute(builder: (context) => const MainNavigationScreen(selectedIndex: 0)),
+                                    (Route<dynamic> route) => false,
                               );
                             } else {
                               // Show login failed error

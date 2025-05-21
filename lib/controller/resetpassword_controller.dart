@@ -13,7 +13,6 @@ class ResetPassword {
     String username = dotenv.get('USERNAME_GMAIL');
     String password = dotenv.get('PASSWORD_GMAIL');
 
-
     final smtpServer = gmail(username, password);
 
     final verificationCode = generateVerificationCode();
