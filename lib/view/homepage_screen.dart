@@ -56,7 +56,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
           showDialog(
             context: context,
             barrierDismissible: false,
-            builder: (_) => const ProfileCompletionPopup(),
+            builder: (_) => const ProfileCompletionPopup(reason: 'diagnose'),
           );
         });
       }
@@ -289,7 +289,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
                     if (userController.hasMissingUserData(user!)) {
                       showDialog(
                         context: context,
-                        builder: (_) => const ProfileCompletionPopup(),
+                        builder: (_) => const ProfileCompletionPopup(reason: 'diagnose'),
                       );
                     } else {
                       Navigator.push(

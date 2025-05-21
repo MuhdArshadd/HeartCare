@@ -3,7 +3,19 @@ import 'package:flutter/material.dart';
 import '../profile_setup_step1_screen.dart';
 
 class ProfileCompletionPopup extends StatelessWidget {
-  const ProfileCompletionPopup({Key? key}) : super(key: key);
+  final String reason; // Can be 'diagnose' or 'profile'
+
+  const ProfileCompletionPopup({Key? key, required this.reason}) : super(key: key);
+
+  String _getMessage() {
+    switch (reason) {
+      case 'profile':
+        return 'Please complete your profile before accessing your Profile section.';
+      case 'diagnose':
+      default:
+        return 'Please complete your profile before proceeding with HeartCare\'s AI Diagnose.';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,10 +55,10 @@ class ProfileCompletionPopup extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Please complete your profile before proceeding with HeartCare\'s AI Diagnose.',
+          Text(
+            _getMessage(),
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               color: Colors.black54,
             ),
@@ -60,7 +72,7 @@ class ProfileCompletionPopup extends StatelessWidget {
                   Navigator.of(context).pop(); // Close the popup
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey, // Close button color
+                  backgroundColor: Colors.grey,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -68,10 +80,7 @@ class ProfileCompletionPopup extends StatelessWidget {
                 ),
                 child: const Text(
                   'Close',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ),
               ElevatedButton(
@@ -83,7 +92,7 @@ class ProfileCompletionPopup extends StatelessWidget {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent, // HeartCare theme color
+                  backgroundColor: Colors.redAccent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -91,10 +100,7 @@ class ProfileCompletionPopup extends StatelessWidget {
                 ),
                 child: const Text(
                   'Go',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ),
             ],
@@ -104,3 +110,4 @@ class ProfileCompletionPopup extends StatelessWidget {
     );
   }
 }
+

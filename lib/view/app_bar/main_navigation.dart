@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:heartcare/controller/user_controller.dart';
 import 'package:heartcare/view/homepage_screen.dart';
 import 'package:heartcare/view/profile_screen.dart';
 import 'package:heartcare/view/symptom_screen.dart';
 import 'package:heartcare/view/treatment_screen.dart';
+import 'package:provider/provider.dart';
+import '../../model/provider/user_provider.dart';
 import '../addsymptom_screen.dart';
 import '../addtreatment_screen.dart';
 import '../popup_screen/add_new_popup.dart';
+import '../popup_screen/complete_profile_popup.dart';
 import 'bottomnavbar.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -17,6 +21,7 @@ class MainNavigationScreen extends StatefulWidget {
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  final UserController userController = UserController();
   late int _selectedIndex;
 
   final List<Widget> _pages = [
@@ -32,11 +37,32 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     _selectedIndex = widget.selectedIndex;
   }
 
-  void _onItemTapped(int index) {
+  void _onItemTapped(int index) async {
+    // Profile tab index (assuming it's 3)
+    const int profileTabIndex = 3;
+
+    if (index == profileTabIndex) {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final user = userProvider.user;
+
+      // Check if profile is incomplete
+      if (user != null && userController.hasMissingUserData(user)) {
+        // Show popup and prevent navigation
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const ProfileCompletionPopup(reason: 'profile'),
+        );
+        return;
+      }
+    }
+
+    // Navigation allowed
     setState(() {
       _selectedIndex = index;
     });
   }
+
 
   void _onFabTapped() {
     _showAddNewPopup(context);  // Call _showAddNewPopup with the correct context
