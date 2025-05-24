@@ -24,8 +24,10 @@ class OpenAIService {
     // Define the tools
     final List<Map<String, dynamic>> tools = [
       {
+        "type": "function",
         "name": "handle_general_app_info_question",
         "description": "Handles general inquiries about the HeartCare app, including greetings, acknowledgments (e.g., 'Hello', 'Thank you'), and questions regarding the app's purpose, features, and functionality. This includes explanations of core features such as Cardiovascular Disease (CVD) risk level detection, health readings (Blood Pressure, Blood Sugar, Cholesterol Level, and BMI), treatment tracking and planning, and symptom tracking and logging.",
+        "strict": true,
         "parameters": {
           "type": "object",
           "properties": {
@@ -34,12 +36,15 @@ class OpenAIService {
               "description": "The user's general inquiry about HeartCare application or interaction."
             }
           },
-          "required": ["content"]
+          "required": ["content"],
+          "additionalProperties": false
         }
       },
       {
+        "type": "function",
         "name": "handle_user_health_question",
         "description": "Handles user questions, concerns, or statements specifically related to cardiovascular health. This includes symptoms, risk factors, lifestyle impacts, preventive measures, or conditions caused by or related to heart disease. The function is tailored to provide guidance, educational insights, and relevant app support for heart-related health concerns.",
+        "strict": true,
         "parameters": {
           "type": "object",
           "properties": {
@@ -48,7 +53,8 @@ class OpenAIService {
               "description": "The user's health-related question or statement."
             }
           },
-          "required": ["content"]
+          "required": ["content"],
+          "additionalProperties": false
         }
       },
     ];
@@ -65,19 +71,19 @@ class OpenAIService {
 
     // Prepare the request payload for OpenAI API
     final Map<String, dynamic> payload = {
-      'model': 'gpt-4o-mini-2024-07-18',
-      "messages": [
+      "model": "gpt-4.1-mini-2025-04-14",
+      "input": [
         {"role": "system", "content": systemPrompt},
         {"role": "user", "content": content}
       ],
-      "functions": tools,
-      "function_call": "auto"
+      "tools": tools,
+      "tool_choice": "auto"
     };
 
     try {
       // Send the API request
       final response = await http.post(
-        Uri.parse('https://api.openai.com/v1/chat/completions'),
+        Uri.parse('https://api.openai.com/v1/responses'),
         headers: {
           HttpHeaders.contentTypeHeader: 'application/json',
           HttpHeaders.authorizationHeader: 'Bearer $openaiApiKey',
@@ -86,13 +92,15 @@ class OpenAIService {
       );
 
       if (response.statusCode == 200) {
+        // print('Raw API response: ${response.body}');
         final responseData = jsonDecode(response.body);
-        final responseMessage = responseData['choices'][0]['message'];
+        // print (responseData);
+        final responseMessage = responseData['output'][0];
 
         // Check if a function was called
-        if (responseMessage.containsKey('function_call')) {
-          final String functionName = responseMessage['function_call']['name'];
-          final Map<String, dynamic> functionArguments = jsonDecode(responseMessage['function_call']['arguments']);
+        if (responseMessage['type'] == 'function_call' && responseMessage['status'] == 'completed') {
+          final String functionName = responseMessage['name'];
+          final Map<String, dynamic> functionArguments = jsonDecode(responseMessage['arguments']);
 
           // Debugging: Print function name and arguments
           print('Function called: $functionName');
@@ -124,6 +132,11 @@ class OpenAIService {
 
   // Function to handle general app info questions
   Future<String> handleGeneralAppInfoQuestion(String content) async {
+    final List<Map<String, dynamic>> tools = [{
+      "type": "file_search",
+      "vector_store_ids": ["vs_68317c10b754819182b9a0595525f21d"],
+    }];
+
     String prompt = """
     You are a knowledgeable and concise assistant dedicated to answering questions about the HeartCare app. 
     
@@ -131,27 +144,50 @@ class OpenAIService {
     - If the question is unrelated to the app, politely redirect the user to focus on HeartCare-related inquiries.  
     - If the user is engaging in casual interaction rather than asking a question, respond in a friendly and conversational manner to maintain a natural user experience.  
     
-    Note: The format of your answer must be concise and clear. Avoid over-explain to the user questions.
+    Note for you: 
+    - Provide answers in a concise and clear format. 
+    - Do not use emojis, font styles (e.g., bold, italics), or other visual embellishments.
+    - Avoid over-explaining user questions; keep responses focused and to the point.
 
     User's question: "$content"
     """;
 
 
     final response = await http.post(
-      Uri.parse('https://api.openai.com/v1/chat/completions'),
+      Uri.parse('https://api.openai.com/v1/responses'),
       headers: {
         HttpHeaders.contentTypeHeader: 'application/json',
         HttpHeaders.authorizationHeader: 'Bearer $openaiApiKey',
       },
       body: json.encode({
-        'model': 'gpt-4o-mini-2024-07-18',
-        'messages': [{'role': 'system', 'content': prompt}],
+        "model": "gpt-4.1-mini-2025-04-14",
+        "input": [{"role": "system", "content": prompt}],
+        "tools": tools,
+        "tool_choice": "required"
       }),
     );
 
     if (response.statusCode == 200) {
       final responseBody = json.decode(response.body);
-      return responseBody['choices'][0]['message']['content'];
+
+      // Find the first output with a 'content' list containing type = output_text
+      final output = responseBody['output']?.firstWhere(
+            (item) => item['type'] == 'message' && item['content'] != null,
+        orElse: () => null,
+      );
+
+      if (output != null) {
+        final contentList = output['content'];
+        final textItem = contentList.firstWhere(
+              (item) => item['type'] == 'output_text',
+          orElse: () => null,
+        );
+        if (textItem != null) {
+          return textItem['text'];
+        }
+      }
+
+      return 'No valid text response found.';
     } else {
       return 'Error in fetching response from OpenAI.';
     }
@@ -167,32 +203,39 @@ class OpenAIService {
       - Always reassure the provided answers is AI generated and best for user to consult a qualified healthcare professional for personalized diagnosis or treatment.
       - Focus exclusively on heart‑related symptoms and treatments (medication, supplements, diet, physical activity).
       
-      Keep your responses concise, more shorter and directly on topic.
+      Note for you: 
+      - Provide answers in a concise and clear format. 
+      - Do not use emojis, font styles (e.g., bold, italics), or other visual embellishments.
+      - Avoid over-explaining user questions; keep responses focused and to the point.
       
       The user asked: "$content"
       """;
 
     final response = await http.post(
-      Uri.parse('https://api.openai.com/v1/chat/completions'),
+      Uri.parse('https://api.openai.com/v1/responses'),
       headers: {
         HttpHeaders.contentTypeHeader: 'application/json',
         HttpHeaders.authorizationHeader: 'Bearer $openaiApiKey',
       },
       body: json.encode({
-        'model': 'gpt-4o-mini-2024-07-18',
-        'messages': [{'role': 'system', 'content': prompt}],
+        "model": "gpt-4.1-mini-2025-04-14",
+        "input": [{"role": "system", "content": prompt}],
       }),
     );
 
     if (response.statusCode == 200) {
       final responseBody = json.decode(response.body);
-      return responseBody['choices'][0]['message']['content'];
+      return responseBody['output'][0]['content'][0]['text'];
     } else {
       return 'Error in fetching response from OpenAI.';
     }
   }
 
   Future<String> getAITreatment(int userID, Map<String, Map<String, String>> cvdPresences, Map<String, String> activeSymptoms, String detectionValue) async {
+    final List<Map<String, dynamic>> tools = [{
+      "type": "file_search",
+      "vector_store_ids": ["vs_6831df8add9881919d7de3444ce3e071"],
+    }];
     if (db.isConnected) {
       try {
         // 1. Get current treatments
@@ -228,33 +271,57 @@ class OpenAIService {
         4. **CVD Risk Score** — Risk status indicating the user's current cardiovascular risk level.
         $cvdLevelDetection
         
+        5. **Research Source (PDFs)** — You have access to two academic PDF documents via a file search tool. Use them to identify possible evidence-based treatments (medications or supplements) that are suitable for the user based on their risk factors and symptoms. Prioritize treatments mentioned in these documents over generic suggestions.
+
+        
         ### INSTRUCTIONS:
         - Tailor the treatment suggestions **based on the combination of context above**.
         - Suggest **0, 1, or more treatments per time of day** (Morning, Afternoon, Evening, Night) as needed.
         - You do NOT need to fill all time slots — only suggest treatments when necessary or beneficial.
         - Use **realistic dosages, units, and scheduling** based on standard practices.
-        - Only return valid JSON.
+        - Base your recommendations only on evidence or studies found in the Research Source (PDFs) unless absolutely necessary.
+        - Only return a valid JSON array (a list of JSON objects). Do not include any explanation, comments, or text outside the JSON.
         """;
 
         // 4. Send request to OpenAI
         final response = await http.post(
-          Uri.parse('https://api.openai.com/v1/chat/completions'),
+          Uri.parse('https://api.openai.com/v1/responses'),
           headers: {
             HttpHeaders.contentTypeHeader: 'application/json',
             HttpHeaders.authorizationHeader: 'Bearer $openaiApiKey',
           },
           body: json.encode({
-            'model': 'gpt-4o-mini-2024-07-18',
-            'messages': [{'role': 'system', 'content': prompt}],
-            'temperature': 0.0, // Reduce randomness to ensure consistent recommendations
+            "model": "gpt-4.1-mini-2025-04-14",
+            "input": [{"role": "system", "content": prompt}],
+            "tools": tools,
+            "tool_choice": "required",
+            'temperature': 0.2, // Reduce randomness to ensure consistent recommendations
           }),
         );
 
         // 5. Handle and return the response
         if (response.statusCode == 200) {
           final responseBody = json.decode(response.body);
-          return responseBody['choices'][0]['message']['content'];
-        } else {
+
+          // Find the first output with a 'content' list containing type = output_text
+          final output = responseBody['output']?.firstWhere(
+                (item) => item['type'] == 'message' && item['content'] != null,
+            orElse: () => null,
+          );
+
+          if (output != null) {
+            final contentList = output['content'];
+            final textItem = contentList.firstWhere(
+                  (item) => item['type'] == 'output_text',
+              orElse: () => null,
+            );
+            if (textItem != null) {
+              return textItem['text'];
+            }
+          }
+
+          return 'No valid text response found.';
+        }else {
           return 'Error in fetching response from OpenAI.';
         }
       } catch (e) {
