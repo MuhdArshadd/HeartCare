@@ -11,7 +11,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(); // Load environment variables
+  await dotenv.load(fileName: ".env"); // Load environment variables
   await NotificationService().initNotification();  // init notifications
 
   final userProvider = UserProvider();

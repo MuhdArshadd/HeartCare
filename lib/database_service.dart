@@ -13,11 +13,11 @@ class DatabaseConnection {
       return true; // Already connected
     }
 
-    String host = dotenv.get('DB_HOST');
-    int port = int.parse(dotenv.get('DB_PORT'));
-    String dbName = dotenv.get('DB_NAME');
-    String username = dotenv.get('DB_USER');
-    String password = dotenv.get('DB_PASSWORD');
+    String host = dotenv.env['DB_HOST'] ?? '';
+    int port = int.parse(dotenv.env['DB_PORT'] ?? '');
+    String dbName = dotenv.env['DB_NAME'] ?? '';
+    String username = dotenv.env['DB_USER'] ?? '';
+    String password = dotenv.env['DB_PASSWORD'] ?? '';
 
     _connection = PostgreSQLConnection(
       host,
