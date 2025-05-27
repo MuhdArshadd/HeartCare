@@ -104,9 +104,7 @@ class _BloodSugarPopupState extends State<BloodSugarPopup> {
                     );
                     return;
                   }
-
                   double? fastingBloodsugar;
-
                   if (!useQuestion) {
                     try {
                       fastingBloodsugar = double.parse(fastingBloodSugar.text.trim());
@@ -121,20 +119,21 @@ class _BloodSugarPopupState extends State<BloodSugarPopup> {
                   }
                   AppPopup.showLoading(context, message: 'Processing...');
                   try {
-                    String result = await healthMetricsController.updateHealthReading(widget.userId, 1, useQuestion,ansQuestion ?? false, fastingBloodsugar ?? 0.0, 0);
+                    final result = await healthMetricsController.updateHealthReading(widget.userId, 1, useQuestion,ansQuestion ?? false, fastingBloodsugar ?? 0.0, 0);
+                    final isSuccess = result == "Update successful";
 
                     AppPopup.hide(context);
 
                     AppPopup.showResult(
                       context,
-                      isSuccess: true,
-                      message: "Successfully Submitted!",
-                      onDismiss: () {
+                      isSuccess: isSuccess,
+                      message: isSuccess ? "Successfully Submitted!": result,
+                      onDismiss: isSuccess ? () {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(builder: (_) => const MainNavigationScreen(selectedIndex: 0)),
                         );
-                      },
+                      } : null,
                     );
                   } catch (e) {
                     AppPopup.hide(context);

@@ -19,17 +19,22 @@ class CvdPredictor {
       throw Exception("Model is not loaded yet. Call loadModel() first.");
     }
 
+    // Prepare the input features (expected: exactly 16 features per sample)
     final inputFeatures = _prepareInput(symptoms, cvdRisks, userAge, userGender);
     print (inputFeatures);
     if (inputFeatures.length != 16) {
       throw Exception("Prepared input must contain exactly 16 features.");
     }
-
-    final input = [inputFeatures];
-    final output = List.filled(1 * 1, 0).reshape([1, 1]);
+    // Wrap input in a batch of size 1 since only expect to have only one input (TensorFlow Lite expects input as 2D: [batch_size, feature_count])
+    final input = [inputFeatures]; // Shape: [1, 16] // example : input = [[feature1_sample1, feature2_sample1, ..., feature16_sample1]], // size of 1 with 16 features
+    // Allocate space for output prediction (1 output per sample in batch)
+    // Here, batch size = 1 and output dimension = 1, so shape is [1, 1]
+    final output = List.filled(1 * 1, 0).reshape([1, 1]); // Initialized as [[0]]
 
     try {
       _interpreter.run(input, output);
+      // Extract prediction value from output[0][0]
+      // Since batch size = 1, the result is a single float value
       final prediction = output[0][0];
       print (prediction);
       return prediction > 0.02 ? 'High Risk' : 'Low Risk';

@@ -64,10 +64,38 @@ class _SymptomDetailPageState extends State<SymptomDetailPage> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text("Success"),
-            content: const Text("Successfully Added!"),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+            contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+            actionsPadding: const EdgeInsets.only(right: 16, bottom: 10),
+            title: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.green,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  "Success",
+                  style: TextStyle(
+                    color: Colors.green[700],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            content: const Text(
+              "Successfully Added!",
+              style: TextStyle(fontSize: 16),
+            ),
             actions: [
               TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.green,
+                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 onPressed: () {
                   Navigator.of(context).pop();
                   setState(() {
@@ -83,10 +111,38 @@ class _SymptomDetailPageState extends State<SymptomDetailPage> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text("Error"),
-            content: const Text("Failed to log symptoms."),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+            contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+            actionsPadding: const EdgeInsets.only(right: 16, bottom: 10),
+            title: Row(
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  color: Colors.red,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  "Error",
+                  style: TextStyle(
+                    color: Colors.red[700],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            content: const Text(
+              "Failed to log symptoms.",
+              style: TextStyle(fontSize: 16),
+            ),
             actions: [
               TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 onPressed: () => Navigator.of(context).pop(),
                 child: const Text("OK"),
               ),

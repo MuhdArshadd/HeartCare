@@ -159,17 +159,13 @@ class _DiagnosePageState extends State<DiagnosePage> {
                 );
 
                 try {
-                  final userProvider = Provider.of<UserProvider>(
-                      context, listen: false);
+                  final userProvider = Provider.of<UserProvider>(context, listen: false);
                   final user = userProvider.user;
 
-                  if (user == null) throw Exception(
-                      "User data is unavailable.");
+                  if (user == null) throw Exception("User data is unavailable.");
 
-                  final symptoms = await userController.getUserActiveSymptoms(
-                      user.userID);
-                  final cvdRisks = await userController.getCVDpresence(
-                      user.userID);
+                  final symptoms = await userController.getUserActiveSymptoms(user.userID);
+                  final cvdRisks = await userController.getCVDpresence(user.userID);
 
                   final predictor = CvdPredictor();
                   await predictor.loadModel();
@@ -211,9 +207,7 @@ class _DiagnosePageState extends State<DiagnosePage> {
                           );
 
                           try {
-                            String recommendation = await openAIService
-                                .getAITreatment(user.userID, cvdRisks, symptoms,
-                                riskPrediction);
+                            String recommendation = await openAIService.getAITreatment(user.userID, cvdRisks, symptoms, riskPrediction);
                             print("raw ai treatment data: $recommendation");
 
                             // Remove loading dialog
@@ -223,9 +217,7 @@ class _DiagnosePageState extends State<DiagnosePage> {
                             Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => AITreatmentRecommendationScreen(
-                                    userID: user.userID,
-                                    treatments: recommendation),
+                                builder: (_) => AITreatmentRecommendationScreen(userID: user.userID, treatments: recommendation),
                               ),
                                   (Route<dynamic> route) => false,
                             );

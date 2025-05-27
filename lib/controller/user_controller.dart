@@ -112,8 +112,7 @@ class UserController {
     }
   }
 
-  Future<void> insertUserRiskFactors(int userId,
-      Map<String, bool> riskPresenceMap) async {
+  Future<void> insertUserRiskFactors(int userId, Map<String, bool> riskPresenceMap) async {
     const Map<String, int> riskIdMap = {
       "Diabetes Mellitus": 1,
       "Hypertension": 2,

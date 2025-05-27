@@ -121,20 +121,21 @@ class _CholesterolLevelPopupState extends State<CholesterolLevelPopup> {
                   }
                   AppPopup.showLoading(context, message: 'Processing...');
                   try {
-                    String result = await healthMetricsController.updateHealthReading(widget.userId, 3, useQuestion, ansQuestion ?? false, totalCholesterol ?? 0.0, 0);
+                    final result = await healthMetricsController.updateHealthReading(widget.userId, 3, useQuestion, ansQuestion ?? false, totalCholesterol ?? 0.0, 0);
+                    final isSuccess = result == "Update successful";
 
                     AppPopup.hide(context);
 
                     AppPopup.showResult(
                       context,
-                      isSuccess: true,
-                      message: "Successfully Submitted!",
-                      onDismiss: () {
+                      isSuccess: isSuccess,
+                      message: isSuccess ? "Successfully Submitted!" : result,
+                      onDismiss: isSuccess ? () {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(builder: (_) => const MainNavigationScreen(selectedIndex: 0)),
                         );
-                      },
+                      } : null,
                     );
                   } catch (e) {
                     AppPopup.hide(context);

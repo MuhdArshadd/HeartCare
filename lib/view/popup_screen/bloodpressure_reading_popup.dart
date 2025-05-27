@@ -125,20 +125,21 @@ class _BloodPressurePopupState extends State<BloodPressurePopup> {
 
                   AppPopup.showLoading(context, message: 'Processing...');
                   try {
-                    String result = await healthMetricsController.updateHealthReading(widget.userId, 2, useQuestion,ansQuestion ?? false,systolic ?? 0.0,diastolic ?? 0.0);
+                    final result = await healthMetricsController.updateHealthReading(widget.userId, 2, useQuestion,ansQuestion ?? false,systolic ?? 0.0,diastolic ?? 0.0);
+                    final isSuccess = result == "Update successful";
 
                     AppPopup.hide(context);
 
                     AppPopup.showResult(
                       context,
-                      isSuccess: true,
-                      message: "Successfully Submitted!",
-                      onDismiss: () {
+                      isSuccess: isSuccess,
+                      message: isSuccess ? "Successfully Submitted!" : result,
+                      onDismiss: isSuccess ? () {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(builder: (_) => const MainNavigationScreen(selectedIndex: 0)),
                         );
-                      },
+                      } : null,
                     );
                   } catch (e) {
                     AppPopup.hide(context);
