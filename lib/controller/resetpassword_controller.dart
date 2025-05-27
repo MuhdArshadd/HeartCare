@@ -10,8 +10,8 @@ class ResetPassword {
   Future<int> sendEmail(String email) async {
     await dotenv.load();  // Ensure .env is loaded
 
-    String username = dotenv.get('USERNAME_GMAIL');
-    String password = dotenv.get('PASSWORD_GMAIL');
+    String username = dotenv.env['USERNAME_GMAIL'] ?? '';
+    String password = dotenv.env['PASSWORD_GMAIL'] ?? '';
 
     final smtpServer = gmail(username, password);
 
