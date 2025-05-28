@@ -16,6 +16,7 @@ import '../model/treatment_model.dart';
 import 'app_bar/main_navigation.dart';
 import 'chatbot_screen.dart';
 import 'diagnose_cvd_screen.dart';
+import 'healthinfosheet_screen.dart';
 
 class HomepageScreen extends StatefulWidget {
   const HomepageScreen({super.key});
@@ -364,7 +365,29 @@ class _HomepageScreenState extends State<HomepageScreen>{
                         final data = readingMap[type];
                         final healthStatus = data?['category'] ?? "Not Available";
                         final lastUpdate = data?['lastUpdate'] ?? "Never";
-                        return _healthReadingCard(type, user!.userID, healthStatus, lastUpdate);
+                        // return _healthReadingCard(type, user!.userID, healthStatus, lastUpdate);
+                        return Stack(
+                          children: [
+                            _healthReadingCard(type, user!.userID, healthStatus, lastUpdate),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: GestureDetector(
+                                onTap: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                                    ),
+                                    builder: (context) => HealthInfoSheet(readingType: type),
+                                  );
+                                },
+                                child: const Icon(Icons.info_outline, size: 20, color: Colors.blue),
+                              ),
+                            ),
+                          ],
+                        );
                       }).toList(),
                     );
                   }
@@ -466,7 +489,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
 
   Widget _healthReadingCard(String label, int userId, String healthStatus, String date) {
     return SizedBox(
-      height: 150, // Fixed height for all cards
+      height: 157, // Fixed height for all cards
       child: _buildCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -474,7 +497,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
             // Title section
             Text(
               label,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -487,7 +510,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
                 healthStatus,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
+                  fontSize: 13,
                   color: _getHealthStatusColor(healthStatus),
                 ),
                 maxLines: 2, // Limit to 3 lines
@@ -497,7 +520,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
 
             // Last update section
             Text("Last Update: $date", style: TextStyle(fontSize: 11)),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
             // Update button
             SizedBox(

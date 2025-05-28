@@ -166,6 +166,7 @@ class _CholesterolLevelPopupState extends State<CholesterolLevelPopup> {
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
             labelText: 'Total Cholesterol (mg/dL)',
+            labelStyle: TextStyle(fontSize: 14),
             border: OutlineInputBorder(),
           ),
         ),

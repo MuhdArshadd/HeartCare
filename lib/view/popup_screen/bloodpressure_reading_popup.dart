@@ -171,6 +171,7 @@ class _BloodPressurePopupState extends State<BloodPressurePopup> {
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
             labelText: 'Systolic Pressure (mmHg)',
+            labelStyle: TextStyle(fontSize: 14),
             border: OutlineInputBorder(),
           ),
         ),
@@ -180,6 +181,7 @@ class _BloodPressurePopupState extends State<BloodPressurePopup> {
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
             labelText: 'Diastolic Pressure (mmHg)',
+            labelStyle: TextStyle(fontSize: 14),
             border: OutlineInputBorder(),
           ),
         ),

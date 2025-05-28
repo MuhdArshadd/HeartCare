@@ -164,6 +164,7 @@ class _BloodSugarPopupState extends State<BloodSugarPopup> {
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
             labelText: 'Fasting Blood Sugar (mg/dL)',
+            labelStyle: TextStyle(fontSize: 14),
             border: OutlineInputBorder(),
           ),
         ),
