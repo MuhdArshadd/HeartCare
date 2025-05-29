@@ -132,7 +132,7 @@ Future<void> _softDeleteTreatment(BuildContext context, int treatmentId) async {
     AppPopup.showResult(
       context,
       isSuccess: true,
-      message: "Successfully Remove!",
+      message: "Successfully Remove!\n\nThis treatment will no longer be continue.",
       onDismiss: () {},
     );
   } else {

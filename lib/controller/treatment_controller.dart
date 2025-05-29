@@ -91,7 +91,7 @@ class TreatmentController {
         ON t.treatment_id = tms.treatment_id
         WHERE t.user_id = @userId 
         AND t.created_at <= @date
-        AND (t.last_treatment_at IS NULL OR @date <= t.last_treatment_at)
+        AND (t.last_treatment_at IS NULL OR @date < t.last_treatment_at)
         ORDER BY t.treatment_times_id ASC
         """,
             substitutionValues: {
