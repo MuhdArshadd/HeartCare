@@ -71,7 +71,6 @@ class _TreatmentPageState extends State<TreatmentPage> {
                 body: "Start your day right — take your morning treatment.",
                 hour: 6,
                 minute: 0,
-                second: 0,
                 payload: "morning_treatment",
               );
             } else if (id == 2){
@@ -81,7 +80,6 @@ class _TreatmentPageState extends State<TreatmentPage> {
                 body: "Time for your midday treatment.",
                 hour: 12,
                 minute: 0,
-                second: 0,
                 payload: "afternoon_treatment",
               );
             } else if (id == 3){
@@ -91,7 +89,6 @@ class _TreatmentPageState extends State<TreatmentPage> {
                 body: "Stay on track with your evening treatment.",
                 hour: 18,
                 minute: 0,
-                second: 0,
                 payload: "evening_treatment",
               );
             } else if (id == 4){
@@ -101,7 +98,6 @@ class _TreatmentPageState extends State<TreatmentPage> {
                 body: "End the day well — take your night treatment.",
                 hour: 21,
                 minute: 0,
-                second: 0,
                 payload: "night_treatment",
               );
             }

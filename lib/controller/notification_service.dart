@@ -35,11 +35,12 @@ class NotificationService {
       );
       print("NotificationService: Initialization successful.");
 
-      // Request notification permission (Android 13+)
-      await notificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
+      // Request permissions (Android 13+)
+      final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
+      notificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
-      // Request exact alarm permission (Android 12+)
-      await notificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestExactAlarmsPermission();
+      await androidPlugin?.requestNotificationsPermission();
+      await androidPlugin?.requestExactAlarmsPermission();
 
       _isInitialized = true;
     } catch (e) {
@@ -82,14 +83,13 @@ class NotificationService {
     required String body,
     required int hour,
     required int minute,
-    required int second,
     required String payload
   }) async {
     // Get the current date/time in device's local timezone
     final now = tz.TZDateTime.now(tz.local);
 
     // Create a date/time for today at the specified hour/min
-    var scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute, second);
+    var scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
 
     // Schedule the notification
     await notificationsPlugin.zonedSchedule(
