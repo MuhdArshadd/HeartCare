@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:heartcare/controller/treatment_controller.dart';
 import 'package:heartcare/view/app_bar/appbar.dart';
+import 'package:heartcare/view/treatment_info_screen.dart';
 import 'package:heartcare/view/treatment_timeline_section.dart';
 import 'package:provider/provider.dart';
 import '../controller/notification_service.dart';
@@ -227,9 +228,27 @@ class _TreatmentPageState extends State<TreatmentPage> {
         child: ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
-            const Text(
-              'Treatment Plan',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Treatment Plan',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const TreatmentInfoPage()),
+                    );
+                  },
+                  child: const Icon(
+                    Icons.info,
+                    color: Colors.blue,
+                    size: 35,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Container(
