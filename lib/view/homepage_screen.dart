@@ -89,8 +89,8 @@ class _HomepageScreenState extends State<HomepageScreen>{
       id: 5, // for general remainder in the morning
       title: "Don't Forget Your Health!",
       body: "Track your symptoms, record treatments, and keep your heart health in check.",
-      hour: 16, // in 24 hour format (9.00AM)
-      minute: 56,
+      hour: 9, // in 24 hour format (9.00AM)
+      minute: 0,
       second: 0,
       payload: "general_morning_remainder",
     );
