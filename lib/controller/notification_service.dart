@@ -82,13 +82,14 @@ class NotificationService {
     required String body,
     required int hour,
     required int minute,
+    required int second,
     required String payload
   }) async {
     // Get the current date/time in device's local timezone
     final now = tz.TZDateTime.now(tz.local);
 
     // Create a date/time for today at the specified hour/min
-    var scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    var scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute, second);
 
     // Schedule the notification
     await notificationsPlugin.zonedSchedule(

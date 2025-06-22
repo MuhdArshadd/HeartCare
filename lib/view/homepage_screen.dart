@@ -73,6 +73,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
       _fetchRiskData(),
       _fetchHealthReadings(),
       _fetchTreatmentData(),
+      _initNotification(),
     ]);
 
     if (mounted) {
@@ -88,8 +89,9 @@ class _HomepageScreenState extends State<HomepageScreen>{
       id: 5, // for general remainder in the morning
       title: "Don't Forget Your Health!",
       body: "Track your symptoms, record treatments, and keep your heart health in check.",
-      hour: 9, // in 24 hour format (9.00AM)
-      minute: 00,
+      hour: 16, // in 24 hour format (9.00AM)
+      minute: 56,
+      second: 0,
       payload: "general_morning_remainder",
     );
 
@@ -100,6 +102,7 @@ class _HomepageScreenState extends State<HomepageScreen>{
       body: "Track your symptoms, record treatments, and keep your heart health in check.",
       hour: 21, // in 24 hour format (9.00PM)
       minute: 0,
+      second: 0,
       payload: "general_night_remainder",
     );
 

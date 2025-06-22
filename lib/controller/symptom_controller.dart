@@ -42,7 +42,7 @@ class SymptomController {
           """
           SELECT symptom_id
           FROM USER_SYMPTOM
-          WHERE user_id = @userId AND bool_symptom_active = true
+          WHERE user_id = @userId
           """,
           substitutionValues: {
             'userId': userId,
