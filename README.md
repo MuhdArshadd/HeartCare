@@ -1,4 +1,4 @@
-# **HeartCare – Mobile App for Cardiovascular Health Monitoring**
+# **HEARTCARE: AI-DRIVEN MOBILE APPLICATION WITH CARDIOVASCULAR HEALTH ASSISTANT FOR NCD PREVENTION IN MALAYSIA**
 
 **HeartCare** is a mobile application developed as part of a final year Software Engineering project at Universiti Teknikal Malaysia Melaka (UTeM).
 The app is designed to assist users in monitoring key health indicators, logging symptoms, and receiving intelligent feedback to support cardiovascular wellness and lifestyle management.
@@ -21,7 +21,7 @@ It offers a user-friendly interface with essential tracking tools and smart feat
   Users can complete and maintain their personal and medical information.
 
 * **Risk Assessment**
-  Built-in diagnostic logic that analyzes user data to assess cardiovascular risk levels.
+  Built-in diagnostic logic using AI model trained with public dataset that analyzes user data to assess cardiovascular risk levels.
 
 * **Health Metric Logging**
   Track vital health metrics such as:
@@ -38,6 +38,9 @@ It offers a user-friendly interface with essential tracking tools and smart feat
   * Exercise
   * Medication
   * Supplements
+ 
+* **AI Treatment Recommendation**
+  Optional for users to get AI treatment recommendation backed by trustes sources such as WHO, MOH and other clinical resources. No external recommendation is used.
 
 * **Symptom Tracker**
   Log and monitor symptoms over time including severity, date, and notes.
@@ -74,5 +77,3 @@ The primary users are individuals in **Malaysia** who are at risk of cardiovascu
 © 2025 Universiti Teknikal Malaysia Melaka (UTeM). All rights reserved.
 This project is officially submitted and protected under UTeM.
 Unauthorized copying, distribution, or reuse of any part of this project is strictly prohibited.
-
----
