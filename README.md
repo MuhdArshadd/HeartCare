@@ -1,5 +1,3 @@
----
-
 # **HeartCare – Mobile App for Cardiovascular Health Monitoring**
 
 **HeartCare** is a mobile application developed as part of a final year Software Engineering project at Universiti Teknikal Malaysia Melaka (UTeM).
