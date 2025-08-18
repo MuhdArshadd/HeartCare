@@ -11,7 +11,76 @@ class HealthMetricsController {
   //3. When the user input and submit -> get the reading category with bool of cvd risk presence -> update to database reading and cvd user risk on the presence of cvd risk
   //4. Return the category and update the homepage ui with the reading category and last_update
 
-  Future<String> updateHealthReading(int userId, int riskId, bool useQuestion, bool ansQuestion, double value1, double value2) async {
+  //Update flow 19/8/2025
+  //Remove questionnaire, only through reading to be more precise.
+
+  // Future<String> updateHealthReading(int userId, int riskId, bool useQuestion, bool ansQuestion, double value1, double value2) async {
+  //   String readingType = "";
+  //   String readingCategory = "";
+  //   bool riskPresence = false;
+  //
+  //   switch (riskId) {
+  //     case 1:
+  //       readingType = "Blood Sugar";
+  //       if (useQuestion) {
+  //         if (ansQuestion) {
+  //           readingCategory = "Confirmed Diabetes";
+  //         } else {
+  //           readingCategory = "Normal";
+  //         }
+  //         riskPresence = ansQuestion;
+  //       } else {
+  //         readingCategory = measureBS(value1);
+  //         riskPresence = (readingCategory == "Prediabetes" || readingCategory == "Diabetes");
+  //       }
+  //       break;
+  //
+  //     case 2:
+  //       readingType = "Blood Pressure";
+  //       if (useQuestion) {
+  //         if (ansQuestion){
+  //           readingCategory = "Confirmed Hypertension";
+  //         }
+  //         else {
+  //           readingCategory = "Normal BP";
+  //         }
+  //         riskPresence = ansQuestion;
+  //       } else {
+  //         readingCategory = measureBP(value1, value2); // value1 = systolic, value2 = diastolic
+  //         riskPresence = (readingCategory == "Stage 2 Hypertension");
+  //       }
+  //       break;
+  //
+  //     case 3:
+  //       readingType = "Cholesterol Level";
+  //       if (useQuestion) {
+  //         if (ansQuestion){
+  //           readingCategory = "Confirmed Hypercholesterolemia";
+  //         }
+  //         else {
+  //           readingCategory = "Optimal";
+  //         }
+  //         riskPresence = ansQuestion;
+  //       } else {
+  //         readingCategory = measureCL(value1); // cholesterol value
+  //         riskPresence = (readingCategory == "High");
+  //       }
+  //       break;
+  //
+  //     case 5:
+  //       readingType = "BMI";
+  //       readingCategory = measureBMI(value1, value2); // value1 = weight, value2 = height
+  //       riskPresence = (readingCategory.contains("Obesity") || readingCategory == "Pre-obesity");
+  //       break;
+  //
+  //     default:
+  //       return "Invalid risk ID";
+  //   }
+  //
+  //   return await updateUserCVD(userId, riskId, readingType, readingCategory, riskPresence);
+  // }
+
+  Future<String> updateHealthReading(int userId, int riskId, double value1, double value2) async {
     String readingType = "";
     String readingCategory = "";
     bool riskPresence = false;
@@ -19,49 +88,20 @@ class HealthMetricsController {
     switch (riskId) {
       case 1:
         readingType = "Blood Sugar";
-        if (useQuestion) {
-          if (ansQuestion) {
-            readingCategory = "Confirmed Diabetes";
-          } else {
-            readingCategory = "Normal";
-          }
-          riskPresence = ansQuestion;
-        } else {
-          readingCategory = measureBS(value1);
-          riskPresence = (readingCategory == "Prediabetes" || readingCategory == "Diabetes");
-        }
+        readingCategory = measureBS(value1);
+        riskPresence = (readingCategory == "Prediabetes" || readingCategory == "Diabetes");
         break;
 
       case 2:
         readingType = "Blood Pressure";
-        if (useQuestion) {
-          if (ansQuestion){
-            readingCategory = "Confirmed Hypertension";
-          }
-          else {
-            readingCategory = "Normal BP";
-          }
-          riskPresence = ansQuestion;
-        } else {
-          readingCategory = measureBP(value1, value2); // value1 = systolic, value2 = diastolic
-          riskPresence = (readingCategory == "Stage 2 Hypertension");
-        }
+        readingCategory = measureBP(value1, value2); // value1 = systolic, value2 = diastolic
+        riskPresence = (readingCategory == "Stage 2 Hypertension");
         break;
 
       case 3:
         readingType = "Cholesterol Level";
-        if (useQuestion) {
-          if (ansQuestion){
-            readingCategory = "Confirmed Hypercholesterolemia";
-          }
-          else {
-            readingCategory = "Optimal";
-          }
-          riskPresence = ansQuestion;
-        } else {
-          readingCategory = measureCL(value1); // cholesterol value
-          riskPresence = (readingCategory == "High");
-        }
+        readingCategory = measureCL(value1); // cholesterol value
+        riskPresence = (readingCategory == "High");
         break;
 
       case 5:
@@ -76,7 +116,6 @@ class HealthMetricsController {
 
     return await updateUserCVD(userId, riskId, readingType, readingCategory, riskPresence);
   }
-
 
   Future<String> updateUserCVD(int userId, int riskId, String readingType, String readingCategory, bool riskPresence) async {
     final now = DateTime.now();

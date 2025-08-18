@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:heartcare/view/app_bar/main_navigation.dart';
 import 'package:heartcare/view/popup_screen/loading_processing_popup.dart';
-import '../../controller/healthmetrics_controller.dart'; // <-- Ensure this path is correct
+import '../../controller/healthmetrics_controller.dart';
 
 class BmiCalculatorPopup extends StatefulWidget {
   final int userId;
@@ -36,7 +36,7 @@ class _BmiCalculatorPopupState extends State<BmiCalculatorPopup> {
     AppPopup.hide(context);
 
     // BMI is category 5, not using questions
-    final result = await _controller.updateHealthReading(widget.userId, 5, false, false, weight, height);
+    final result = await _controller.updateHealthReading(widget.userId, 5, weight, height);
 
     final isSuccess = result == "Update successful";
 

@@ -12,8 +12,6 @@ class BloodPressurePopup extends StatefulWidget {
 }
 
 class _BloodPressurePopupState extends State<BloodPressurePopup> {
-  bool useQuestion = false;
-  bool? ansQuestion;
   TextEditingController systolicController = TextEditingController();
   TextEditingController diastolicController = TextEditingController();
 
@@ -51,44 +49,8 @@ class _BloodPressurePopupState extends State<BloodPressurePopup> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              const Text('Choose input type:', style: TextStyle(fontSize: 16)),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: ChoiceChip(
-                      label: const Text('Reading'),
-                      selected: !useQuestion,
-                      selectedColor: Colors.redAccent,
-                      backgroundColor: Colors.grey,
-                      labelStyle: const TextStyle(color: Colors.white),
-                      onSelected: (selected) {
-                        setState(() {
-                          useQuestion = !selected;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ChoiceChip(
-                      label: const Text('Questionnaire'),
-                      selected: useQuestion,
-                      selectedColor: Colors.redAccent,
-                      backgroundColor: Colors.grey,
-                      labelStyle: const TextStyle(color: Colors.white),
-                      onSelected: (selected) {
-                        setState(() {
-                          useQuestion = selected;
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
               const SizedBox(height: 20),
-              useQuestion ? _buildQuestionnaireSection() : _buildReadingSection(),
+              _buildReadingSection(),
               const SizedBox(height: 24),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -97,35 +59,29 @@ class _BloodPressurePopupState extends State<BloodPressurePopup> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 onPressed: () async {
-                  if (useQuestion && ansQuestion == null) {
+                  double? systolic;
+                  double? diastolic;
+
+                  try {
+                    systolic = double.parse(systolicController.text.trim());
+                    diastolic = double.parse(diastolicController.text.trim());
+                  } catch (e) {
                     AppPopup.showResult(
                       context,
                       isSuccess: false,
-                      message: "Please answer the questionnaire.",
+                      message: "Please enter valid numeric values.",
                     );
                     return;
                   }
 
-                  double? systolic;
-                  double? diastolic;
-
-                  if (!useQuestion) {
-                    try {
-                      systolic = double.parse(systolicController.text.trim());
-                      diastolic = double.parse(diastolicController.text.trim());
-                    } catch (e) {
-                      AppPopup.showResult(
-                        context,
-                        isSuccess: false,
-                        message: "Please enter valid numeric values.",
-                      );
-                      return;
-                    }
-                  }
-
                   AppPopup.showLoading(context, message: 'Processing...');
                   try {
-                    final result = await healthMetricsController.updateHealthReading(widget.userId, 2, useQuestion,ansQuestion ?? false,systolic ?? 0.0,diastolic ?? 0.0);
+                    final result = await healthMetricsController.updateHealthReading(
+                      widget.userId,
+                      2,
+                      systolic,
+                      diastolic,
+                    );
                     final isSuccess = result == "Update successful";
 
                     AppPopup.hide(context);
@@ -134,12 +90,16 @@ class _BloodPressurePopupState extends State<BloodPressurePopup> {
                       context,
                       isSuccess: isSuccess,
                       message: isSuccess ? "Successfully Submitted!" : result,
-                      onDismiss: isSuccess ? () {
+                      onDismiss: isSuccess
+                          ? () {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (_) => const MainNavigationScreen(selectedIndex: 0)),
+                          MaterialPageRoute(
+                            builder: (_) => const MainNavigationScreen(selectedIndex: 0),
+                          ),
                         );
-                      } : null,
+                      }
+                          : null,
                     );
                   } catch (e) {
                     AppPopup.hide(context);
@@ -150,8 +110,10 @@ class _BloodPressurePopupState extends State<BloodPressurePopup> {
                     );
                   }
                 },
-
-                child: const Text('Submit', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),),
+                child: const Text(
+                  'Submit',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -184,52 +146,6 @@ class _BloodPressurePopupState extends State<BloodPressurePopup> {
             labelStyle: TextStyle(fontSize: 14),
             border: OutlineInputBorder(),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuestionnaireSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '"Do you currently use anti-hypertensive medication?"',
-          style: TextStyle(fontSize: 16),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: ChoiceChip(
-                label: const Text('No'),
-                labelStyle: const TextStyle(color: Colors.white),
-                selected: ansQuestion == false,
-                selectedColor: Colors.redAccent,
-                backgroundColor: Colors.grey,
-                onSelected: (selected) {
-                  setState(() {
-                    ansQuestion = selected ? false : null;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ChoiceChip(
-                label: const Text('Yes'),
-                labelStyle: const TextStyle(color: Colors.white),
-                selected: ansQuestion == true,
-                selectedColor: Colors.redAccent,
-                backgroundColor: Colors.grey,
-                onSelected: (selected) {
-                  setState(() {
-                    ansQuestion = selected ? true : null;
-                  });
-                },
-              ),
-            ),
-          ],
         ),
       ],
     );

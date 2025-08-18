@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:heartcare/controller/healthmetrics_controller.dart';
-
 import '../app_bar/main_navigation.dart';
 import 'loading_processing_popup.dart';
 
@@ -13,8 +12,6 @@ class CholesterolLevelPopup extends StatefulWidget {
 }
 
 class _CholesterolLevelPopupState extends State<CholesterolLevelPopup> {
-  bool useQuestion = false;
-  bool? ansQuestion;
   TextEditingController cholesterolSerum = TextEditingController();
 
   final HealthMetricsController healthMetricsController = HealthMetricsController();
@@ -50,44 +47,8 @@ class _CholesterolLevelPopupState extends State<CholesterolLevelPopup> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              const Text('Choose input type:', style: TextStyle(fontSize: 16)),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: ChoiceChip(
-                      label: const Text('Reading'),
-                      selected: !useQuestion,
-                      selectedColor: Colors.redAccent,
-                      backgroundColor: Colors.grey,
-                      labelStyle: const TextStyle(color: Colors.white),
-                      onSelected: (selected) {
-                        setState(() {
-                          useQuestion = !selected;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ChoiceChip(
-                      label: const Text('Questionnaire'),
-                      selected: useQuestion,
-                      selectedColor: Colors.redAccent,
-                      backgroundColor: Colors.grey,
-                      labelStyle: const TextStyle(color: Colors.white),
-                      onSelected: (selected) {
-                        setState(() {
-                          useQuestion = selected;
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
               const SizedBox(height: 20),
-              useQuestion ? _buildQuestionnaireSection() : _buildReadingSection(),
+              _buildReadingSection(),
               const SizedBox(height: 24),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -96,32 +57,27 @@ class _CholesterolLevelPopupState extends State<CholesterolLevelPopup> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 onPressed: () async {
-                  if (useQuestion && ansQuestion == null) {
+                  double? totalCholesterol;
+
+                  try {
+                    totalCholesterol = double.parse(cholesterolSerum.text.trim());
+                  } catch (e) {
                     AppPopup.showResult(
                       context,
                       isSuccess: false,
-                      message: "Please answer the questionnaire.",
+                      message: "Please enter valid numeric values.",
                     );
                     return;
                   }
 
-                  double? totalCholesterol;
-
-                  if (!useQuestion) {
-                    try {
-                      totalCholesterol = double.parse(cholesterolSerum.text.trim());
-                    } catch (e) {
-                      AppPopup.showResult(
-                        context,
-                        isSuccess: false,
-                        message: "Please enter valid numeric values.",
-                      );
-                      return;
-                    }
-                  }
                   AppPopup.showLoading(context, message: 'Processing...');
                   try {
-                    final result = await healthMetricsController.updateHealthReading(widget.userId, 3, useQuestion, ansQuestion ?? false, totalCholesterol ?? 0.0, 0);
+                    final result = await healthMetricsController.updateHealthReading(
+                      widget.userId,
+                      3,
+                      totalCholesterol,
+                      0,
+                    );
                     final isSuccess = result == "Update successful";
 
                     AppPopup.hide(context);
@@ -130,12 +86,16 @@ class _CholesterolLevelPopupState extends State<CholesterolLevelPopup> {
                       context,
                       isSuccess: isSuccess,
                       message: isSuccess ? "Successfully Submitted!" : result,
-                      onDismiss: isSuccess ? () {
+                      onDismiss: isSuccess
+                          ? () {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (_) => const MainNavigationScreen(selectedIndex: 0)),
+                          MaterialPageRoute(
+                            builder: (_) => const MainNavigationScreen(selectedIndex: 0),
+                          ),
                         );
-                      } : null,
+                      }
+                          : null,
                     );
                   } catch (e) {
                     AppPopup.hide(context);
@@ -146,7 +106,10 @@ class _CholesterolLevelPopupState extends State<CholesterolLevelPopup> {
                     );
                   }
                 },
-                child: const Text('Submit', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),),
+                child: const Text(
+                  'Submit',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -171,52 +134,6 @@ class _CholesterolLevelPopupState extends State<CholesterolLevelPopup> {
           ),
         ),
         const SizedBox(height: 6),
-      ],
-    );
-  }
-
-  Widget _buildQuestionnaireSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '"Have you ever been told by a doctor or Assistant Medical Officer that you have high blood cholesterol/ hypercholesterolemia?"',
-          style: TextStyle(fontSize: 16),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: ChoiceChip(
-                label: const Text('No'),
-                labelStyle: const TextStyle(color: Colors.white),
-                selected: ansQuestion == false,
-                selectedColor: Colors.redAccent,
-                backgroundColor: Colors.grey,
-                onSelected: (selected) {
-                  setState(() {
-                    ansQuestion = selected ? false : null;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ChoiceChip(
-                label: const Text('Yes'),
-                labelStyle: const TextStyle(color: Colors.white),
-                selected: ansQuestion == true,
-                selectedColor: Colors.redAccent,
-                backgroundColor: Colors.grey,
-                onSelected: (selected) {
-                  setState(() {
-                    ansQuestion = selected ? true : null;
-                  });
-                },
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
