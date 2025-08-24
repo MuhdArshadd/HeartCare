@@ -75,5 +75,5 @@ The primary users are individuals in **Malaysia** who are at risk of cardiovascu
 ## © **Copyright**
 
 © 2025 Universiti Teknikal Malaysia Melaka (UTeM). All rights reserved.
-This project is officially submitted and protected under UTeM.
+This project is officially submitted and protected under UTeM and MyIPO.
 Unauthorized copying, distribution, or reuse of any part of this project is strictly prohibited.
