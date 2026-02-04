@@ -94,7 +94,7 @@ class _AITreatmentRecommendationScreenState extends State<AITreatmentRecommendat
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                "DISCLAIMER: These AI-generated recommendations are for informational purposes only and should not replace professional medical advice.\n\nAlways consult with your healthcare provider before starting any new treatment regimen.",
+                "DISCLAIMER: These AI-generated recommendations are for informational purposes only and should not replace professional medical advice.\n\nAlways consult with your healthcare provider or Pharmacists before starting any new treatment regimen.",
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold

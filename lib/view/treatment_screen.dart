@@ -243,8 +243,8 @@ class _TreatmentPageState extends State<TreatmentPage> {
                     );
                   },
                   child: const Icon(
-                    Icons.info,
-                    color: Colors.blue,
+                    Icons.warning,
+                    color: Colors.redAccent,
                     size: 35,
                   ),
                 ),

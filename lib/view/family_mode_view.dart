@@ -68,19 +68,42 @@ class _FamilyModeViewState extends State<FamilyModeView> {
     });
   }
 
-  // --- NEW: SEND POKE FUNCTION ---
+  // --- NEW: SEND POKE FUNCTION (MODIFIED) ---
   Future<void> _sendPoke(int targetUserId, String targetName, String? targetToken) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final myName = userProvider.user?.fullname ?? "A Family Member";
 
     // 1. Validation: Check if token exists immediately
     if (targetToken == null || targetToken.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Cannot poke $targetName (No device token found)"))
+      );
       return;
     }
 
+    // --- 2. SHOW VISUAL FEEDBACK (POPUP) ---
+    // We show this BEFORE the async call so it feels instant
+    ScaffoldMessenger.of(context).hideCurrentSnackBar(); // Prevent stacking if spamming
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.touch_app, color: Colors.white), // Poke Icon
+            const SizedBox(width: 10),
+            Text("Alerting $targetName...", style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        backgroundColor: Colors.orange, // Orange to match the poke button
+        duration: const Duration(milliseconds: 1500), // Disappear quickly
+        behavior: SnackBarBehavior.floating, // Floats above content
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16), // Margin from edges
+      ),
+    );
+
     try {
-      // 2. Call Cloud Function directly (No DB call needed!)
-      final result = await FirebaseFunctions.instance
+      // 3. Call Cloud Function directly (No DB call needed!)
+      await FirebaseFunctions.instance
           .httpsCallable('sendPokeNotification')
           .call({
         'targetToken': targetToken,
@@ -90,6 +113,10 @@ class _FamilyModeViewState extends State<FamilyModeView> {
 
     } catch (e) {
       print("Poke Error: $e");
+      // Optional: Show error popup if it actually fails
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to send poke."), backgroundColor: Colors.red)
+      );
     }
   }
 
@@ -392,7 +419,7 @@ class _FamilyModeViewState extends State<FamilyModeView> {
         // --- LAYER 1: GOOGLE MAPS ---
         Positioned.fill(
           child: GoogleMap(
-          mapType: MapType.normal,
+            mapType: MapType.normal,
             initialCameraPosition: _defaultCamera,
             markers: _markers, // <--- BIND MARKERS HERE
             myLocationEnabled: true, // Shows Blue Dot (Uses GPS Permission)
